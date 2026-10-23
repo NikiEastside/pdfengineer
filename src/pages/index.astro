@@ -5,23 +5,6 @@ import TrustBadges from '../components/TrustBadges.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import DrawingA4 from '../components/DrawingA4.astro';
 
-// Beide Werkzeuge stehen gleichwertig im Kopf. Vorher hatte nur Zusammenfügen einen blauen
-// Knopf, als wäre Komprimieren zweitrangig. Wer kommt, will meist sofort etwas erledigen.
-const tools = [
-  {
-    href: '/pdf-zusammenfuegen/',
-    title: 'PDF zusammenfügen',
-    text: 'Mehrere PDFs zu einer machen',
-    icon: ['M8 3h6l4 4v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z', 'M10 21h7a3 3 0 0 0 3-3V9', 'M9 9h5M9 12h5'],
-  },
-  {
-    href: '/pdf-komprimieren/',
-    title: 'PDF komprimieren',
-    text: 'Große PDFs kleiner machen',
-    icon: ['M8 3h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z', 'M12 8v3m0 0-1.5-1.5M12 11l1.5-1.5M12 17v-3m0 0-1.5 1.5M12 14l1.5 1.5'],
-  },
-];
-
 // Die drei Punkte, an denen sich PDF Engineer von anderen PDF-Werkzeugen unterscheidet. Ohne
 // Namen zu nennen: Es geht darum, was hier gilt, nicht darum, was anderswo fehlt.
 const reasons = [
@@ -65,33 +48,62 @@ const specs = [
     title={'PDFs bearbeiten,<br class="hidden sm:block" /> <span class="text-signal">ohne sie hochzuladen.</span>'}
     lead="Zusammenfügen und komprimieren geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
   >
-    <div id="werkzeuge" class="mt-9 grid max-w-2xl scroll-mt-24 gap-3 sm:grid-cols-2">
-      {
-        tools.map((tool) => (
-          <a
-            href={tool.href}
-            class="group flex items-center gap-4 rounded-xl border border-rule bg-sheet p-4 shadow-sm transition hover:border-signal/60 hover:shadow-[0_10px_30px_-14px_rgb(29_91_214/0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
-          >
-            <span class="grid size-11 shrink-0 place-items-center rounded-lg bg-signal/10 text-signal">
-              <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                {tool.icon.map((d) => <path d={d} />)}
-              </svg>
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block font-semibold text-ink">{tool.title}</span>
-              <span class="mt-0.5 block text-sm text-graphite">{tool.text}</span>
-            </span>
-            <span class="text-signal transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
-          </a>
-        ))
-      }
-    </div>
-    <a href="/sicherheit/" class="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:underline">
+    <a href="/sicherheit/" class="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:underline">
       Selbst nachprüfen, dass nichts hochgeladen wird <span aria-hidden="true">→</span>
     </a>
     <TrustBadges />
     <DrawingA4 slot="aside" />
   </PageHero>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading id="werkzeuge" label="Werkzeuge" title="Was du hier machen kannst" />
+    <div class="grid gap-4 md:grid-cols-2">
+      <a
+        href="/pdf-zusammenfuegen/"
+        class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+      >
+        <div class="flex items-start justify-between">
+          <span class="grid size-11 place-items-center rounded-xl bg-signal/10 text-signal">
+            <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M8 3h6l4 4v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-linejoin="round"></path>
+              <path d="M10 21h7a3 3 0 0 0 3-3V9" stroke-linecap="round"></path>
+              <path d="M9 9h5M9 12h5" stroke-linecap="round"></path>
+            </svg>
+          </span>
+          <span class="label">Werkzeug 01</span>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-ink">PDF zusammenfügen</h3>
+        <p class="mt-2 text-sm leading-relaxed text-graphite">
+          Mach aus mehreren PDFs eine. Die Reihenfolge bestimmst du, und auch passwortgeschützte Dateien gehen.
+        </p>
+        <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
+          Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </span>
+      </a>
+
+      <a
+        href="/pdf-komprimieren/"
+        class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+      >
+        <div class="flex items-start justify-between">
+          <span class="grid size-11 place-items-center rounded-xl bg-signal/10 text-signal">
+            <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M8 3h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-linejoin="round"></path>
+              <path d="M12 8v3m0 0-1.5-1.5M12 11l1.5-1.5M12 17v-3m0 0-1.5 1.5M12 14l1.5 1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <span class="label">Werkzeug 02</span>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-ink">PDF komprimieren</h3>
+        <p class="mt-2 text-sm leading-relaxed text-graphite">
+          Mach große PDFs kleiner, zum Beispiel für E-Mail-Anhänge. Der Text bleibt dabei scharf und markierbar.
+        </p>
+        <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
+          Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </span>
+      </a>
+    </div>
+  </section>
 
   <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
     <SectionHeading label="Warum hier" title="Warum PDF Engineer?" />
