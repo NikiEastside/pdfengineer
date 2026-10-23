@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import MergeTool from '../components/MergeTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'Dateien hinzufügen',
+    text: 'Zieh deine PDFs ins Feld oder klick darauf und wähl sie aus. Hochgeladen wird dabei nichts.',
+  },
+  {
+    title: 'Sortieren',
+    text: 'Bring die Dateien in die richtige Reihenfolge, mit der Maus oder mit den Pfeilen neben jeder Datei.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Ein Klick auf „Zusammenfügen“, und du bekommst eine einzige PDF.',
+  },
+];
+
+// Ehrlich auch dort, wo das Werkzeug noch etwas nicht kann: Wer nach Lesezeichen fragt und
+// eine ausweichende Antwort bekommt, glaubt auch dem Rest der Seite nicht mehr.
+const faq = [
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die PDFs werden direkt in deinem Browser zusammengefügt. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Kostet das etwas?',
+    answer: 'Nein. Du brauchst kein Konto, es gibt kein Wasserzeichen und keine Begrenzung.',
+  },
+  {
+    question: 'Wie viele Dateien kann ich zusammenfügen?',
+    answer:
+      'So viele du willst. Die einzige Grenze ist der Arbeitsspeicher deines Geräts. Am Computer reicht der fast immer, auf älteren Handys kann es bei sehr großen Scans eng werden.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Das bleibt genau wie die Datei auf deinem Gerät. Die fertige PDF hat danach kein Passwort mehr. Dateien, die nur gegen Drucken oder Kopieren geschützt sind, gehen auch ohne Passwort.',
+  },
+  {
+    question: 'Bleiben Lesezeichen und Formulare erhalten?',
+    answer:
+      'Noch nicht. Seiten, Text und Bilder werden komplett übernommen, Lesezeichen und ausfüllbare Formularfelder aber leider noch nicht.',
+  },
+  {
+    question: 'Geht das auch am Handy?',
+    answer: 'Ja. Die Reihenfolge änderst du dort mit den Pfeilen neben jeder Datei.',
+  },
+];
+---
+
+<Layout
+  title="PDF zusammenfügen – kostenlos und ohne Upload | PDF Engineer"
+  description="Mehrere PDFs kostenlos zu einer Datei zusammenfügen, direkt im Browser. Ohne Upload, ohne Anmeldung und ohne Wasserzeichen. Auch passwortgeschützte PDFs gehen."
+>
+  <PageHero
+    label="Werkzeug 01 / Zusammenfügen"
+    title="PDF zusammenfügen"
+    lead="Füg mehrere PDFs zu einer Datei zusammen, in genau der Reihenfolge, die du willst. Alles passiert in deinem Browser."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <MergeTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

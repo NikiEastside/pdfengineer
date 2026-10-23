@@ -1,0 +1,41 @@
+---
+// Vorlage für das Vorschaubild beim Teilen (public/og-bild.png, 1200 × 630). Keine Seite für
+// Besucher: `npm run og-bild` rendert sie aus dem fertigen Build. So stimmt das Bild immer mit
+// Schriften und Farben der Seite überein, statt in einem Grafikprogramm nachgebaut zu werden.
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import DrawingA4 from '../components/DrawingA4.astro';
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Vorschaubild | PDF Engineer</title>
+  </head>
+  <body class="m-0 font-sans antialiased">
+    <div data-og class="relative isolate flex h-[630px] w-[1200px] items-center overflow-hidden bg-paper px-20">
+      <div class="blueprint absolute inset-0 -z-10 [mask-image:none]" aria-hidden="true"></div>
+      <div class="flex-1">
+        <div class="flex items-center gap-3">
+          <Logo class="size-11" />
+          <span class="font-mono text-xl font-semibold tracking-[0.16em] uppercase">
+            <span class="text-signal">PDF</span> Engineer
+          </span>
+        </div>
+        <p class="mt-14 text-[64px] leading-[1.05] font-semibold tracking-tight text-ink">
+          PDFs bearbeiten,<br /><span class="text-signal">ohne sie hochzuladen.</span>
+        </p>
+        <p class="mt-8 font-mono text-lg tracking-[0.1em] text-graphite uppercase">
+          Zusammenfügen · Komprimieren · direkt im Browser
+        </p>
+      </div>
+      <div class="w-[330px] shrink-0">
+        <DrawingA4 />
+      </div>
+    </div>
+  </body>
+</html>

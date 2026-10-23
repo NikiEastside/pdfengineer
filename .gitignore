@@ -1,0 +1,35 @@
+# build output
+dist/
+# generated types
+.astro/
+# von scripts/copy-pdfjs-assets.mjs aus node_modules kopiert
+public/vendor/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+
+# environment variables
+.env
+.env.production
+.env.deploy
+
+# macOS-specific files
+.DS_Store
+
+# Lokale Editor-Einstellungen
+.claude/
+
+# Das Repo ist oeffentlich. Zum Testen werden echte Dokumente benutzt (Vertraege, Zeugnisse),
+# und keines davon darf versehentlich mit hochgehen. Testdateien fuer das Repo werden
+# deshalb erzeugt und nicht vom Rechner kopiert.
+*.pdf
+# von npm run testdateien erzeugt
+testdateien/
+
+# Private Notizen (eigenes, privates Repo) und der lokale Verweis darauf. Das öffentliche Repo
+# enthält nur Code. Geschäftliches, Hosting-Details und Pläne gehören nicht hierher.
+/intern/
+/CLAUDE.md

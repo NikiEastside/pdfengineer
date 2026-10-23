@@ -1,0 +1,5 @@
+# PDF Engineer – pdfengineer.de
+User-agent: *
+Allow: /
+
+Sitemap: https://pdfengineer.de/sitemap-index.xml

@@ -1,0 +1,14 @@
+---
+// Baustellenseite. Ausgeliefert wird sie nur, solange im Projektordner eine Datei WARTUNG
+// liegt: Dann hängt deploy.sh eine 503-Regel an die .htaccess (siehe dort).
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<Layout title="Wartung | PDF Engineer" description="PDF Engineer wird gerade überarbeitet und ist bald wieder da." noindex>
+  <PageHero
+    label="Wartung"
+    title={'Gleich wieder da.<br class="hidden sm:block" /> <span class="text-signal">Wir schrauben gerade.</span>'}
+    lead="Wir arbeiten gerade an der Seite. Schau einfach etwas später nochmal vorbei."
+  />
+</Layout>

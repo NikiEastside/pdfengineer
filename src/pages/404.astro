@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<Layout title="Seite nicht gefunden | PDF Engineer" description="Diese Seite gibt es nicht." noindex>
+  <PageHero label="Fehler 404" title="Diese Seite gibt es nicht." lead="Hier ist leider nichts. Vielleicht ein Tippfehler in der Adresse?">
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/" class="inline-flex items-center gap-2 rounded-lg bg-signal px-5 py-3 text-sm font-medium text-on-signal transition hover:bg-signal-strong">
+        Zur Startseite
+      </a>
+      <a href="/pdf-zusammenfuegen/" class="inline-flex items-center gap-2 rounded-lg border border-rule bg-sheet px-5 py-3 text-sm font-medium text-ink transition hover:border-rule-strong">
+        PDF zusammenfügen
+      </a>
+    </div>
+  </PageHero>
+</Layout>

@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import CompressTool from '../components/CompressTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'Dateien hinzufügen',
+    text: 'Zieh eine oder mehrere PDFs ins Feld oder klick darauf und wähl sie aus.',
+  },
+  {
+    title: 'Stärke wählen',
+    text: '„Mittel“ passt fast immer. „Klein“ ist gut für E-Mails, „Hoch“, wenn du drucken willst.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Jede Datei wird einzeln verkleinert. Du siehst gleich, wie viel du gespart hast.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Komprimiert wird mit Ghostscript, und das läuft direkt in deinem Browser. Verbindungen zu fremden Servern blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Was wird eigentlich kleiner?',
+    answer:
+      'Vor allem Bilder und Scans. Sie werden auf eine niedrigere Auflösung heruntergerechnet und neu gespeichert. Text und Schriften bleiben, wie sie sind. Du kannst den Text also weiterhin markieren und durchsuchen.',
+  },
+  {
+    question: 'Warum wird meine Datei kaum kleiner?',
+    answer:
+      'PDFs, die fast nur aus Text bestehen, sind meistens schon klein. Da gibt es nicht viel zu holen. Wird eine Datei nicht kleiner, sagen wir dir das, statt dir eine schlechtere Version zu geben.',
+  },
+  {
+    question: 'Welche Stärke soll ich nehmen?',
+    answer:
+      'Meistens „Mittel“. Am Bildschirm siehst du kaum einen Unterschied zum Original. „Klein“ spart am meisten, reicht aber nur zum Anschauen. Mit „Hoch“ lässt sich das Ergebnis noch gut drucken.',
+  },
+  {
+    question: 'Warum dauert es beim ersten Mal länger?',
+    answer:
+      'Beim ersten Mal lädt die Seite das Werkzeug zum Komprimieren, das sind gut 10 MB. Danach geht es sofort los.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die verkleinerte Datei hat danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="PDF komprimieren – kostenlos und ohne Upload | PDF Engineer"
+  description="PDFs kostenlos verkleinern, direkt im Browser. Ohne Upload, ohne Anmeldung und ohne Wasserzeichen. Der Text bleibt markierbar."
+>
+  <PageHero
+    label="Werkzeug 02 / Komprimieren"
+    title="PDF komprimieren"
+    lead="Mach große PDFs kleiner, etwa für E-Mail-Anhänge oder Formulare mit Größenlimit. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <CompressTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

@@ -1,0 +1,14 @@
+---
+const badges = ['Ohne Upload', 'Kostenlos', 'Ohne Anmeldung', 'Open Source', 'Aus Deutschland'];
+---
+
+<ul class="mt-7 flex flex-wrap gap-2" aria-label="Eigenschaften">
+  {
+    badges.map((badge) => (
+      <li class="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/70 px-3 py-1 font-mono text-[11px] tracking-[0.1em] text-graphite uppercase backdrop-blur-sm">
+        <span class="size-1.5 rounded-full bg-ok" aria-hidden="true" />
+        {badge}
+      </li>
+    ))
+  }
+</ul>

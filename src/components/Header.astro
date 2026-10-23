@@ -1,0 +1,42 @@
+---
+import Logo from './Logo.astro';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+  { href: '/#werkzeuge', label: 'Werkzeuge', active: path.startsWith('/pdf-') },
+  { href: '/sicherheit/', label: 'Sicherheit', active: path === '/sicherheit' },
+];
+---
+
+<header class="sticky top-0 z-40 border-b border-rule bg-paper/85 backdrop-blur-md">
+  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <a
+      href="/"
+      aria-label="PDF Engineer – Startseite"
+      class="flex shrink-0 items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+    >
+      <Logo class="size-7" />
+      {/* Unter 380 px (iPhone SE) passen Schriftzug und Navigation nicht nebeneinander. Dort
+          bleibt nur das Zeichen, die Navigation ist wichtiger. */}
+      <span class="hidden font-mono text-[13px] font-semibold tracking-[0.16em] uppercase xs:inline" aria-hidden="true">
+        <span class="text-signal">PDF</span> Engineer
+      </span>
+    </a>
+    <nav aria-label="Hauptnavigation" class="flex items-center gap-1 text-sm">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            aria-current={link.active ? 'page' : undefined}
+            class:list={[
+              'rounded-md px-2.5 py-1.5 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-signal',
+              link.active ? 'text-ink' : 'text-graphite',
+            ]}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

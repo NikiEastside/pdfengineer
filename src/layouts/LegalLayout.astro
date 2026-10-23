@@ -1,0 +1,19 @@
+---
+import Layout from './Layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  label: string;
+  heading: string;
+}
+const { title, description, label, heading } = Astro.props;
+---
+
+<Layout title={title} description={description} noindex>
+  <PageHero label={label} title={heading} />
+  <article class="prose-page mx-auto max-w-3xl px-4 pt-12 sm:px-6">
+    <slot />
+  </article>
+</Layout>

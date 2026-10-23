@@ -1,0 +1,23 @@
+---
+// Ablagefeld, das Zusammenfügen und Komprimieren teilen. src/scripts/pdf-list.ts findet es
+// über data-dropzone und data-file-input.
+---
+
+<label
+  data-dropzone
+  class="group relative flex cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border-2 border-dashed border-rule-strong bg-sunken px-4 py-12 text-center transition focus-within:border-signal hover:border-signal data-active:border-signal data-active:bg-signal/5"
+>
+  <span class="grid size-12 place-items-center rounded-xl border border-rule bg-sheet text-signal shadow-sm transition group-hover:-translate-y-0.5 group-data-active:-translate-y-0.5">
+    <svg aria-hidden="true" viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="M12 15V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  </span>
+  <span>
+    <span class="block text-base font-medium text-ink">PDFs hierher ziehen</span>
+    <span class="mt-1 block text-sm text-graphite">
+      oder <span class="font-medium text-signal underline decoration-signal/40 underline-offset-4">Dateien auswählen</span>
+    </span>
+  </span>
+  <span class="font-mono text-[11px] tracking-[0.08em] text-graphite uppercase">So viele du willst · bleiben auf deinem Gerät</span>
+  <input data-file-input type="file" accept="application/pdf,.pdf" multiple class="sr-only" />
+</label>

@@ -1,0 +1,60 @@
+name: Seite ausliefern
+
+# Gearbeitet wird auf "dev", veroeffentlicht wird durch Zusammenfuehren nach
+# "main". Ein Push auf main ist die Freigabe und nichts anderes.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Trockenlauf – zeigt nur, was passieren wuerde"
+        type: boolean
+        required: false
+        default: true
+
+# Zwei Spiegelungen mit "mirror --delete" in denselben Ordner wuerden sich gegenseitig
+# Dateien abraeumen. Der laufende Deploy wird zu Ende gefahren, nicht abgebrochen.
+concurrency:
+  group: deploy-strato-ganymed
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Der manuelle Ausloeser laesst den Branch frei waehlen. Ohne diese Zeile wuerde ein
+    # Start auf dev den Entwicklungsstand live schieben.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+          cache: npm
+
+      - run: npm ci
+
+      - name: lftp installieren
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+
+      # Vor dem Hochladen: ein Typfehler soll auffallen, solange die alte Seite noch live ist.
+      - name: Typen und Vorlagen pruefen
+        run: npx astro check
+
+      # deploy.sh wird nicht in YAML nachgebaut: Dort stehen die Sperre gegen /htdocs, die
+      # .htaccess und das Ausfiltern des Passworts. Die Zugangsdaten liest es aus der Umgebung.
+      - name: Ausliefern
+        env:
+          STRATO_FTP_HOST: ${{ secrets.STRATO_FTP_HOST }}
+          STRATO_FTP_USER: ${{ secrets.STRATO_FTP_USER }}
+          STRATO_FTP_PASSWORD: ${{ secrets.STRATO_FTP_PASSWORD }}
+          STRATO_REMOTE_PATH: ${{ secrets.STRATO_REMOTE_PATH }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ./deploy.sh --dry-run
+          else
+            ./deploy.sh
+          fi

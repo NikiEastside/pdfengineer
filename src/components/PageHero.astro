@@ -1,0 +1,46 @@
+---
+// Kopf jeder Seite: technische Beschriftung, Überschrift, Einleitung, darunter optional mehr
+// (Plaketten, Knöpfe) und rechts daneben eine Zeichnung. Das Raster liegt als eigene Ebene
+// dahinter, weil es nach unten ausgeblendet wird und diese Maske sonst auch den Text träfe.
+interface Props {
+  label?: string;
+  title: string;
+  lead?: string;
+  size?: 'large' | 'normal';
+}
+const { label, title, lead, size = 'normal' } = Astro.props;
+const hasAside = Astro.slots.has('aside');
+---
+
+<section class="relative isolate overflow-hidden border-b border-rule">
+  <div class="blueprint absolute inset-0 -z-10" aria-hidden="true"></div>
+  <div
+    class:list={[
+      'mx-auto max-w-6xl px-4 sm:px-6',
+      size === 'large' ? 'pt-16 pb-14 sm:pt-24 sm:pb-20' : 'pt-12 pb-10 sm:pt-16 sm:pb-12',
+      hasAside && 'lg:grid lg:grid-cols-[1fr_22rem] lg:items-center lg:gap-12',
+    ]}
+  >
+    <div>
+      {
+        label && (
+          <p class="label flex items-center gap-2.5">
+            <span class="h-px w-6 bg-mark" aria-hidden="true" />
+            {label}
+          </p>
+        )
+      }
+      <h1
+        class:list={[
+          'max-w-3xl font-semibold tracking-tight text-balance text-ink',
+          label && 'mt-4',
+          size === 'large' ? 'text-4xl leading-[1.05] sm:text-6xl' : 'text-3xl leading-tight sm:text-5xl',
+        ]}
+        set:html={title}
+      />
+      {lead && <p class="mt-5 max-w-2xl text-lg text-pretty text-graphite">{lead}</p>}
+      <slot />
+    </div>
+    {hasAside && <div class="hidden lg:block"><slot name="aside" /></div>}
+  </div>
+</section>

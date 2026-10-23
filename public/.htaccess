@@ -1,0 +1,70 @@
+# Wird mit dem Build nach dist/ kopiert und mit hochgeladen. Liegt hier und nicht von Hand auf
+# dem Server, weil "mirror --delete" eine dort abgelegte Datei beim nächsten Deploy löscht.
+# scripts/preview.mjs liest dieselbe Datei, damit die Vorschau dieselben Header setzt.
+
+# Ohne diese Zeile liefert Apache WASM womöglich als application/octet-stream aus. Der Browser
+# lehnt dann das schnelle Streaming-Laden ab, und Ghostscript (rund 15 MB) lädt spürbar
+# langsamer oder gar nicht.
+AddType application/wasm .wasm
+# pdf.js liefert seinen Worker als .mjs. Ein Modul-Skript mit falschem Typ führt der
+# Browser nicht aus.
+AddType text/javascript .mjs
+
+# Eigene Fehlerseite statt der von Strato. Astro baut sie als /404.html.
+ErrorDocument 404 /404.html
+
+# Strato liefert die Seite auch über http:// aus, ohne umzuleiten. Dort könnte ein Netzwerk
+# unterwegs (offenes WLAN) das Programm verändern, und das Versprechen "nichts verlässt dein
+# Gerät" hinge dann an dessen Gnade.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # www.pdfengineer.de lieferte sonst die ganze Seite ein zweites Mal aus, und Google sähe
+  # doppelte Inhalte. Eine Adresse, eine Umleitung, gleich auf https.
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain image/svg+xml
+  AddOutputFilterByType DEFLATE application/javascript text/javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  # Der größte Posten der ganzen Seite. WASM-Code packt sich gut, meist auf ein Drittel.
+  AddOutputFilterByType DEFLATE application/wasm
+  # Schriften und Bilder sind bereits komprimiert; erneutes Packen kostet Rechenzeit
+  # und bringt nichts.
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Astro hängt einen Inhalts-Hash an die Dateinamen unter /_astro/, deshalb sind sie
+  # beliebig lange gültig: Ändert sich der Inhalt, ändert sich der Name. Die Hilfsdateien
+  # von pdf.js tragen statt des Hashs die Version im Pfad (/vendor/pdfjs-<version>/).
+  # Beide JavaScript-Schreibweisen, weil Strato die neuere liefert.
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  # Gilt nur für WASM mit Hash oder Version im Pfad. Eine WASM-Datei direkt in public/
+  # bliebe nach einem Update ein Jahr lang veraltet.
+  ExpiresByType application/wasm "access plus 1 year"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Das Versprechen der Seite als Regel, die der Browser durchsetzt: Skripte, Verbindungen,
+  # Schriften und Bilder nur vom eigenen Server. Selbst ein Fehler im eigenen Code oder in
+  # einer Bibliothek kann damit keine PDF an einen fremden Server schicken.
+  #   - wasm-unsafe-eval erlaubt nur das Übersetzen von WebAssembly, kein eval() für JS
+  #   - blob: braucht der Download der fertigen PDF
+  #   - data: bei Schriften, weil pdf.js eingebettete PDF-Schriften so an den Browser gibt
+  #   - Kein unsafe-inline: astro.config.mjs sorgt dafür, dass nichts inline landet
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob:; img-src 'self' blob: data:; style-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+  # Ein halbes Jahr nur noch über https. Länger erst, wenn sich gezeigt hat, dass Strato das
+  # Zertifikat zuverlässig verlängert: Läuft es ab, können Besucher die Warnung für die ganze
+  # Dauer nicht wegklicken.
+  Header always set Strict-Transport-Security "max-age=15552000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+</IfModule>
