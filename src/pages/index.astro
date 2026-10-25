@@ -41,12 +41,12 @@ const specs = [
 
 <Layout
   title="PDF Engineer – PDFs zusammenfügen, teilen, sortieren und komprimieren ohne Upload"
-  description="PDFs kostenlos zusammenfügen, teilen, sortieren und komprimieren, direkt im Browser. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
+  description="PDFs kostenlos zusammenfügen, teilen, sortieren, komprimieren und Metadaten ändern, direkt im Browser. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
 >
   <PageHero
     size="large"
     title={'PDFs bearbeiten,<br class="hidden sm:block" /> <span class="text-signal">ohne sie hochzuladen.</span>'}
-    lead="Zusammenfügen, teilen, sortieren und komprimieren geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
+    lead="Zusammenfügen, teilen, sortieren, komprimieren und Metadaten bereinigen geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
   >
     <a href="/sicherheit/" class="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:underline">
       Selbst nachprüfen, dass nichts hochgeladen wird <span aria-hidden="true">→</span>
@@ -57,7 +57,7 @@ const specs = [
 
   <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
     <SectionHeading id="werkzeuge" label="Werkzeuge" title="Was du hier machen kannst" />
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <a
         href="/pdf-zusammenfuegen/"
         class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
@@ -141,6 +141,30 @@ const specs = [
         <h3 class="mt-6 text-xl font-semibold text-ink">PDF-Seiten sortieren</h3>
         <p class="mt-2 text-sm leading-relaxed text-graphite">
           Zieh die Seiten in eine neue Reihenfolge. Schiefe Seiten drehst du, überflüssige entfernst du.
+        </p>
+        <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
+          Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </span>
+      </a>
+
+      <a
+        href="/pdf-metadaten-aendern/"
+        class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+      >
+        <div class="flex items-start justify-between">
+          <span class="grid size-11 place-items-center rounded-xl bg-signal/10 text-signal">
+            <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M8 3h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-linejoin="round"></path>
+              <path d="M9 11h6M9 14h6M9 17h3" stroke-linecap="round"></path>
+              <circle cx="16.5" cy="17.5" r="2.5" class="fill-sheet"></circle>
+              <path d="m18.3 19.3 1.7 1.7" stroke-linecap="round"></path>
+            </svg>
+          </span>
+          <span class="label">Werkzeug 05</span>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-ink">PDF-Metadaten ändern</h3>
+        <p class="mt-2 text-sm leading-relaxed text-graphite">
+          Sieh nach, was deine PDF über dich verrät, und ändere oder entferne Autor, Titel und Programm.
         </p>
         <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
           Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>

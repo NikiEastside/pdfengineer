@@ -1,0 +1,83 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import MetaTool from '../components/MetaTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus. Du siehst sofort alle gespeicherten Angaben.',
+  },
+  {
+    title: 'Ändern oder entfernen',
+    text: 'Bearbeite einzelne Felder oder entferne mit einem Klick alles, was die Datei über dich verrät.',
+  },
+  {
+    title: 'Speichern',
+    text: 'Ein Klick auf „Speichern“, und du bekommst die PDF mit deinen Angaben zurück, unter demselben Namen.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Was sind Metadaten überhaupt?',
+    answer:
+      'Angaben, die in der PDF stecken, aber nicht auf den Seiten stehen: Titel, Autor, mit welchem Programm sie erstellt wurde und wann. Du siehst sie in deinem PDF-Programm unter „Eigenschaften“ oder „Informationen“, und jeder, dem du die Datei schickst, kann sie lesen.',
+  },
+  {
+    question: 'Warum sollte ich Metadaten entfernen?',
+    answer:
+      'Sie verraten oft mehr, als man denkt: deinen vollen Namen, die Firma, in der ein Dokument entstanden ist, oder wann du zuletzt daran gearbeitet hast. Vor dem Verschicken einer Bewerbung, eines Vertrags oder eines Angebots lohnt ein Blick.',
+  },
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die Metadaten werden direkt in deinem Browser gelesen und geändert. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Was ist XMP, und warum wird es entfernt?',
+    answer:
+      'Viele Programme speichern die Metadaten ein zweites Mal in einem eigenen Format namens XMP, und manche zeigen bevorzugt diese Fassung an. Bliebe sie stehen, sähe man dort weiter die alten Angaben. Deshalb entfernt das Werkzeug sie beim Speichern. Einziger Nachteil: Eine PDF/A-Kennzeichnung für die Langzeitarchivierung steckt ebenfalls darin und geht dabei verloren.',
+  },
+  {
+    question: 'Ändert sich am Inhalt etwas?',
+    answer: 'Nein. Seiten, Text und Bilder bleiben genau, wie sie waren. Nur die Angaben in den Eigenschaften ändern sich.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die gespeicherte PDF hat danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="PDF-Metadaten ändern oder entfernen – kostenlos und ohne Upload | PDF Engineer"
+  description="Titel, Autor und andere Metadaten einer PDF kostenlos ändern oder mit einem Klick entfernen, direkt im Browser. Ohne Upload und ohne Anmeldung."
+>
+  <PageHero
+    label="Werkzeug 05 / Metadaten"
+    title="PDF-Metadaten ändern"
+    lead="Sieh nach, was deine PDF über dich verrät: Autor, Programm, Datum. Ändere die Angaben oder entferne sie mit einem Klick. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <MetaTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

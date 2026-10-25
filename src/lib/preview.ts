@@ -1,4 +1,5 @@
 import type { PDFWorker } from 'pdfjs-dist';
+import { EMPTY, toLocalInput, type Metadata } from './metadata-fields';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 type PdfJs = typeof import('pdfjs-dist');
@@ -76,9 +77,14 @@ export async function inspectPdf(
   }
 }
 
+// Metadaten, wie pdf.js sie liest. custom sind Einträge außerhalb der Standardfelder, etwa
+// "Company" aus Word. hasXmp: zusätzlich ein XMP-Paket, das viele Programme bevorzugt anzeigen.
+export type DocumentMetadata = { values: Metadata; custom: [string, string][]; hasXmp: boolean };
+
 export type OpenDocument = {
   pageCount: number;
   render: (pageNumber: number, width: number) => Promise<HTMLCanvasElement>;
+  metadata: () => Promise<DocumentMetadata>;
   close: () => Promise<void>;
 };
 
@@ -98,6 +104,32 @@ export async function openPdf(
       document: {
         pageCount: doc.numPages,
         render: (pageNumber, width) => renderPage(doc, pageNumber, width),
+        metadata: async () => {
+          const { info, metadata } = await doc.getMetadata();
+          const raw = info as Record<string, unknown>;
+          const text = (key: string) => (typeof raw[key] === 'string' ? (raw[key] as string) : '');
+          const date = (key: string) => toLocalInput(text(key) ? lib.PDFDateString.toDateObject(text(key)) : null);
+          // pdf.js 6 liefert die Zusatzeinträge als Map, ältere Fassungen als Objekt.
+          const customSource = raw.Custom instanceof Map ? [...raw.Custom.entries()] : Object.entries((raw.Custom as object) ?? {});
+          const custom = customSource.map(
+            ([key, value]) => [key, typeof value === 'string' ? value : String((value as { name?: string })?.name ?? value)] as [string, string],
+          );
+          return {
+            values: {
+              ...EMPTY,
+              title: text('Title'),
+              author: text('Author'),
+              subject: text('Subject'),
+              keywords: text('Keywords'),
+              creator: text('Creator'),
+              producer: text('Producer'),
+              created: date('CreationDate'),
+              modified: date('ModDate'),
+            },
+            custom,
+            hasXmp: metadata !== null,
+          };
+        },
         close: () => task.destroy(),
       },
     };

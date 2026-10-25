@@ -23,10 +23,10 @@ const FILES = 'testdateien';
 const DOWNLOADS = join(tmpdir(), 'pdfengineer-test');
 mkdirSync(DOWNLOADS, { recursive: true });
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
-if (!existsSync(join(FILES, '6-zehn-seiten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
+if (!existsSync(join(FILES, '7-mit-metadaten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
 
 const pdfjs = await import('../node_modules/pdfjs-dist/legacy/build/pdf.mjs');
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -40,6 +40,12 @@ async function pdfRotations(path) {
   const rotations = [];
   for (let i = 1; i <= doc.numPages; i++) rotations.push((await doc.getPage(i)).rotate);
   return rotations;
+}
+
+async function pdfInfo(path) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
+  const { info, metadata } = await doc.getMetadata();
+  return { ...info, xmp: metadata !== null, custom: info.Custom instanceof Map ? info.Custom.size : 0 };
 }
 
 async function pdfTexts(path) {
@@ -355,6 +361,77 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     } catch {}
     problems.splice(before);
     check(`${engineName} sortieren: klappt offline`, offline);
+    await context.close();
+  }
+
+
+  // ---------- Metadaten ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-metadaten-aendern/', { waitUntil: 'networkidle' });
+    const field = (name) => page.locator(`#meta-tool input[data-field="${name}"]`);
+    const summary = () => page.locator('#meta-tool [data-summary]').textContent();
+    const saveAs = async (name) => {
+      await page.locator('#meta-tool [data-save]').click();
+      await page.locator('#meta-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+      const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#meta-tool [data-download]').click()]);
+      const target = join(DOWNLOADS, `${engineName}-${name}`);
+      await download.saveAs(target);
+      return { target, filename: download.suggestedFilename() };
+    };
+
+    await page.setInputFiles('#meta-tool [data-file-input]', join(FILES, '7-mit-metadaten.pdf'));
+    await page.locator('#meta-tool [data-form]').waitFor({ state: 'visible', timeout: 30000 });
+    check(
+      `${engineName} metadaten: Felder gelesen`,
+      (await field('title').inputValue()) === 'Arbeitsvertrag 2026' && (await field('author').inputValue()) === 'Max Mustermann' && (await field('created').inputValue()) === '2026-03-12T09:14',
+    );
+    check(`${engineName} metadaten: XMP und Zusatzeintrag angezeigt`, (await page.locator('#meta-tool [data-xmp]').isVisible()) && (await page.locator('#meta-tool [data-custom-list]').textContent()).includes('Company: Muster GmbH'));
+    check(`${engineName} metadaten: ohne Änderung gesperrt`, (await summary()) === 'Keine Änderungen' && (await page.locator('#meta-tool [data-save]').isDisabled()));
+
+    await field('title').fill('Neuer Titel');
+    await field('author').fill('');
+    check(`${engineName} metadaten: Änderungen gezählt`, (await summary()) === '2 Felder geändert', await summary());
+    const first = await saveAs('geaendert.pdf');
+    const changed = await pdfInfo(first.target);
+    check(
+      `${engineName} metadaten: gespeichert, Rest erhalten, XMP und Zusatzeintrag weg`,
+      changed.Title === 'Neuer Titel' && changed.Author === undefined && changed.Producer === 'macOS Quartz PDFContext' && !changed.xmp && changed.custom === 0,
+      JSON.stringify({ Title: changed.Title, Author: changed.Author, Producer: changed.Producer, xmp: changed.xmp, custom: changed.custom }),
+    );
+    check(`${engineName} metadaten: gleicher Dateiname`, first.filename === '7-mit-metadaten.pdf', first.filename);
+
+    await page.locator('#meta-tool [data-restore]').click();
+    check(`${engineName} metadaten: Zurücksetzen`, (await field('author').inputValue()) === 'Max Mustermann');
+    await page.locator('#meta-tool [data-clear]').click();
+    check(`${engineName} metadaten: Alle entfernen`, (await summary()) === 'Alle Felder leer');
+    const cleared = await pdfInfo((await saveAs('leer.pdf')).target);
+    check(
+      `${engineName} metadaten: wirklich alles weg`,
+      ['Title', 'Author', 'Subject', 'Keywords', 'Creator', 'Producer', 'CreationDate', 'ModDate'].every((key) => cleared[key] === undefined) && !cleared.xmp,
+    );
+
+    // Verschlüsselte PDFs: pdf-lib liest deren Metadaten leer. Die Felder müssen trotzdem
+    // stimmen, und unveränderte Angaben dürfen beim Speichern nicht verloren gehen.
+    await page.setInputFiles('#meta-tool [data-file-input]', join(FILES, '3-rot-passwort-geheim.pdf'));
+    await page.locator('#meta-tool [data-password]').waitFor({ state: 'visible', timeout: 30000 });
+    await page.locator('#meta-tool [data-password] input').fill('geheim');
+    await page.locator('#meta-tool [data-password] button').click();
+    await page.locator('#meta-tool [data-form]').waitFor({ state: 'visible', timeout: 30000 });
+    await page.waitForFunction(() => document.querySelector('#meta-tool input[data-field="producer"]')?.value !== '', null, { timeout: 10000 }).catch(() => {});
+    const producer = await field('producer').inputValue();
+    check(`${engineName} metadaten: Passwort-PDF gelesen`, producer.startsWith('pdf-lib'), producer);
+    await field('title').fill('Rot');
+    await context.setOffline(true);
+    const before = problems.length;
+    let locked;
+    try {
+      locked = await pdfInfo((await saveAs('passwort.pdf')).target);
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} metadaten: Passwort-PDF behält Angaben, auch offline`, locked?.Title === 'Rot' && locked?.Producer?.startsWith('pdf-lib'), JSON.stringify({ Title: locked?.Title, Producer: locked?.Producer }));
     await context.close();
   }
 

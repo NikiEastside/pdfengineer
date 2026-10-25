@@ -2,7 +2,7 @@
 // Erzeugt statt kopiert, weil das Repo öffentlich ist und echte Dokumente nie hineingehören.
 //
 //   npm run testdateien
-import { PDFDocument, StandardFonts, rgb } from '@cantoo/pdf-lib';
+import { PDFDocument, PDFHexString, PDFName, StandardFonts, rgb } from '@cantoo/pdf-lib';
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -97,5 +97,26 @@ await images('5-bilder-gross.pdf');
     page.drawText(`Seite ${i}`, { x: 60, y: 420, font, size: 96, color: rgb(1, 1, 1) });
   }
   writeFileSync(`${dir}/6-zehn-seiten.pdf`, await doc.save());
+}
+// Für die Metadaten: alle Felder gefüllt und dazu ein XMP-Paket, wie es Word oder Acrobat
+// schreiben. Das Werkzeug muss beides los werden.
+{
+  const doc = await PDFDocument.create({ updateMetadata: false });
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  doc.addPage([595, 842]).drawText('Dokument mit Metadaten', { x: 60, y: 760, font, size: 24 });
+  doc.setTitle('Arbeitsvertrag 2026');
+  doc.setAuthor('Max Mustermann');
+  doc.setSubject('Befristung');
+  doc.setKeywords(['Vertrag,', 'befristet']);
+  doc.setCreator('Microsoft Word');
+  doc.setProducer('macOS Quartz PDFContext');
+  doc.setCreationDate(new Date('2026-03-12T09:14:00'));
+  doc.setModificationDate(new Date('2026-10-20T16:02:00'));
+  // Wie Word ihn hinterlässt. Steht in keinem Standardfeld und soll trotzdem sichtbar werden.
+  doc.getInfoDict().set(PDFName.of('Company'), PDFHexString.fromText('Muster GmbH'));
+  const xmp = '<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator><rdf:Seq><rdf:li>Max Mustermann</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+  const stream = doc.context.stream(xmp, { Type: 'Metadata', Subtype: 'XML' });
+  doc.catalog.set(PDFName.of('Metadata'), doc.context.register(stream));
+  writeFileSync(`${dir}/7-mit-metadaten.pdf`, await doc.save());
 }
 console.log(`Testdateien in ${dir}/ erzeugt.`);
