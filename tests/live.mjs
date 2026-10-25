@@ -23,10 +23,10 @@ const FILES = 'testdateien';
 const DOWNLOADS = join(tmpdir(), 'pdfengineer-test');
 mkdirSync(DOWNLOADS, { recursive: true });
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
-if (!existsSync(join(FILES, '5-bilder-gross.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
+if (!existsSync(join(FILES, '6-zehn-seiten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
 
 const pdfjs = await import('../node_modules/pdfjs-dist/legacy/build/pdf.mjs');
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -214,6 +214,76 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     const small = join(DOWNLOADS, `${engineName}-klein.pdf`);
     await smallDownload.saveAs(small);
     check(`${engineName} komprimieren: klein kleiner als mittel`, readFileSync(small).length < readFileSync(medium).length);
+    await context.close();
+  }
+
+
+  // ---------- Teilen ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-teilen/', { waitUntil: 'networkidle' });
+    await page.setInputFiles('#split-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#split-tool [data-board]').waitFor({ state: 'visible', timeout: 30000 });
+    await page.waitForFunction(() => document.querySelectorAll('#split-tool [data-thumb] canvas').length > 0, null, { timeout: 30000 });
+    const cut = (n) => page.locator(`#split-tool [data-cut="${n}"]`);
+    const parts = () => page.locator('#split-tool [data-parts] li').allTextContents();
+    check(`${engineName} teilen: 10 Seiten, 9 Trennstellen`, (await page.locator('#split-tool [data-thumb]').count()) === 10 && (await page.locator('#split-tool [data-cut]').count()) === 9);
+    check(`${engineName} teilen: ohne Marke gesperrt`, await page.locator('#split-tool [data-split]').isDisabled());
+
+    await cut(3).click();
+    await cut(7).click();
+    check(`${engineName} teilen: zwei Marken, drei Teile`, (await parts()).join(' | ') === 'Teil 1 · Seiten 1–3 | Teil 2 · Seiten 4–7 | Teil 3 · Seiten 8–10', (await parts()).join(' | '));
+    await cut(7).click();
+    check(`${engineName} teilen: Marke wieder entfernt`, (await parts()).length === 2);
+    await cut(7).click();
+    await cut(7).dragTo(cut(8));
+    check(`${engineName} teilen: Marke verschieben`, (await parts()).join(' | ').includes('Seiten 4–8'), (await parts()).join(' | '));
+    await cut(8).dragTo(cut(7));
+    check(`${engineName} teilen: Ziehen entfernt die Marke nicht`, (await parts()).length === 3);
+
+    await page.locator('#split-tool [data-split]').click();
+    await page.locator('#split-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+    const links = page.locator('#split-tool [data-downloads] a[download]');
+    const expected = [['Seite 1', 'Seite 3'], ['Seite 4', 'Seite 7'], ['Seite 8', 'Seite 10']];
+    let allRight = (await links.count()) === 3;
+    for (let i = 0; i < 3 && allRight; i++) {
+      const [download] = await Promise.all([page.waitForEvent('download'), links.nth(i).click()]);
+      const target = join(DOWNLOADS, `${engineName}-teil-${i + 1}.pdf`);
+      await download.saveAs(target);
+      const texts = await pdfTexts(target);
+      allRight = texts[0].includes(expected[i][0]) && texts.at(-1).includes(expected[i][1]) && download.suggestedFilename() === `6-zehn-seiten-teil-${i + 1}.pdf`;
+    }
+    check(`${engineName} teilen: drei richtige Teile mit richtigen Namen`, allRight);
+    await cut(5).click();
+    check(`${engineName} teilen: neue Marke verwirft Ergebnis`, await page.locator('#split-tool [data-result]').isHidden());
+
+    await page.setInputFiles('#split-tool [data-file-input]', join(FILES, '3-rot-passwort-geheim.pdf'));
+    await page.locator('#split-tool [data-password]').waitFor({ state: 'visible', timeout: 30000 });
+    await page.locator('#split-tool [data-password] input').fill('geheim');
+    await page.locator('#split-tool [data-password] button').click();
+    await page.locator('#split-tool [data-board]').waitFor({ state: 'visible', timeout: 30000 });
+    check(`${engineName} teilen: Passwort-PDF öffnet`, (await page.locator('#split-tool [data-thumb]').count()) === 3);
+
+    await page.setInputFiles('#split-tool [data-file-input]', join(FILES, '4-keine-pdf.pdf'));
+    await page.waitForFunction(() => document.querySelector('#split-tool [data-message]')?.textContent.includes('Kann nicht geöffnet werden'), null, { timeout: 30000 });
+    check(`${engineName} teilen: kaputte Datei gemeldet`, true);
+
+    // Offline: Datei laden, Netz weg, teilen
+    await page.setInputFiles('#split-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#split-tool [data-board]').waitFor({ state: 'visible', timeout: 30000 });
+    await cut(5).click();
+    await context.setOffline(true);
+    const before = problems.length;
+    let offline = false;
+    try {
+      await page.locator('#split-tool [data-split]').click();
+      await page.locator('#split-tool [data-result]').waitFor({ state: 'visible', timeout: 30000 });
+      offline = (await links.count()) === 2;
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} teilen: klappt offline`, offline);
     await context.close();
   }
 

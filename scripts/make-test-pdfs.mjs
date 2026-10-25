@@ -85,4 +85,17 @@ await colored('2-gruen-gesperrt.pdf', 'Grün', 1, [0.1, 0.55, 0.3], { userPasswo
 await colored('3-rot-passwort-geheim.pdf', 'Rot', 3, [0.75, 0.2, 0.2], { userPassword: 'geheim', ownerPassword: 'besitzer' });
 writeFileSync(`${dir}/4-keine-pdf.pdf`, 'Das ist nur Text.');
 await images('5-bilder-gross.pdf');
+// Zum Teilen: zehn Seiten in wechselnden Farben, jede mit ihrer Nummer, damit sich die Teile
+// am Ergebnis eindeutig prüfen lassen.
+{
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.HelveticaBold);
+  const colors = [[0.12, 0.37, 0.82], [0.1, 0.55, 0.3], [0.75, 0.2, 0.2], [0.45, 0.3, 0.7], [0.85, 0.5, 0.1]];
+  for (let i = 1; i <= 10; i++) {
+    const page = doc.addPage([595, 842]);
+    page.drawRectangle({ x: 0, y: 0, width: 595, height: 842, color: rgb(...colors[(i - 1) % colors.length]) });
+    page.drawText(`Seite ${i}`, { x: 60, y: 420, font, size: 96, color: rgb(1, 1, 1) });
+  }
+  writeFileSync(`${dir}/6-zehn-seiten.pdf`, await doc.save());
+}
 console.log(`Testdateien in ${dir}/ erzeugt.`);

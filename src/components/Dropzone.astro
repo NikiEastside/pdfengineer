@@ -1,6 +1,10 @@
 ---
-// Ablagefeld, das Zusammenfügen und Komprimieren teilen. src/scripts/pdf-list.ts findet es
-// über data-dropzone und data-file-input.
+// Ablagefeld, das alle Werkzeuge teilen. Die Skripte finden es über data-dropzone und
+// data-file-input. Teilen nimmt nur eine Datei, die anderen beliebig viele.
+interface Props {
+  multiple?: boolean;
+}
+const { multiple = true } = Astro.props;
 ---
 
 <label
@@ -13,11 +17,13 @@
     </svg>
   </span>
   <span>
-    <span class="block text-base font-medium text-ink">PDFs hierher ziehen</span>
+    <span class="block text-base font-medium text-ink">{multiple ? 'PDFs hierher ziehen' : 'PDF hierher ziehen'}</span>
     <span class="mt-1 block text-sm text-graphite">
-      oder <span class="font-medium text-signal underline decoration-signal/40 underline-offset-4">Dateien auswählen</span>
+      oder <span class="font-medium text-signal underline decoration-signal/40 underline-offset-4">{multiple ? 'Dateien auswählen' : 'Datei auswählen'}</span>
     </span>
   </span>
-  <span class="font-mono text-[11px] tracking-[0.08em] text-graphite uppercase">So viele du willst · bleiben auf deinem Gerät</span>
-  <input data-file-input type="file" accept="application/pdf,.pdf" multiple class="sr-only" />
+  <span class="font-mono text-[11px] tracking-[0.08em] text-graphite uppercase">
+    {multiple ? 'So viele du willst · bleiben auf deinem Gerät' : 'Eine Datei · bleibt auf deinem Gerät'}
+  </span>
+  <input data-file-input type="file" accept="application/pdf,.pdf" multiple={multiple} class="sr-only" />
 </label>

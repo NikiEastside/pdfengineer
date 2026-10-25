@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import SplitTool from '../components/SplitTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus. Du siehst sofort alle Seiten.',
+  },
+  {
+    title: 'Marken setzen',
+    text: 'Klick zwischen zwei Seiten, wo getrennt werden soll. So oft du willst, jede Marke ergibt einen Teil mehr.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Ein Klick auf „Teilen“, und jeder Teil liegt als eigene PDF zum Herunterladen bereit.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die PDF wird direkt in deinem Browser geteilt. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'In wie viele Teile kann ich eine PDF zerlegen?',
+    answer:
+      'In so viele, wie sie Seiten hat. Jede Marke zwischen zwei Seiten ergibt einen Teil mehr. Willst du jede Seite einzeln, setzt du einfach überall eine Marke.',
+  },
+  {
+    question: 'Wie verschiebe ich eine Marke?',
+    answer:
+      'Halt sie fest und zieh sie an eine andere Stelle, mit der Maus oder am Handy mit dem Finger. Ein kurzer Klick auf eine Marke entfernt sie.',
+  },
+  {
+    question: 'Bleibt die Qualität erhalten?',
+    answer:
+      'Ja. Die Seiten werden unverändert übernommen, nichts wird neu berechnet oder verkleinert. Wenn du die Teile auch kleiner haben willst, nimm danach <a class="text-signal underline underline-offset-2" href="/pdf-komprimieren/">PDF komprimieren</a>.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die Teile haben danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="PDF teilen – kostenlos und ohne Upload | PDF Engineer"
+  description="Eine PDF kostenlos in mehrere Dateien aufteilen, direkt im Browser. Seiten ansehen, Trennstellen setzen, fertig. Ohne Upload und ohne Anmeldung."
+>
+  <PageHero
+    label="Werkzeug 03 / Teilen"
+    title="PDF teilen"
+    lead="Trenn eine PDF an genau den Stellen, die du willst, und bekomm jeden Teil als eigene Datei. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-4xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <SplitTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

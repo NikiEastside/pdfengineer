@@ -25,7 +25,7 @@ npm run test:live                             # Gesamttest gegen https://pdfengi
 BASE=http://localhost:4322 npm run test:live  # gegen die laufende Vorschau
 ```
 
-Der Test spielt beide Werkzeuge in Chromium und WebKit (Safari) durch, auch mit Passwort,
+Der Test spielt alle Werkzeuge in Chromium und WebKit (Safari) durch, auch mit Passwort,
 kaputten Dateien und ohne Netz, und prüft jede Seite hell und dunkel bis 320 px Breite. Er
 schlägt fehl bei Konsolenfehlern, CSP-Verstößen und jeder Verbindung zu einem fremden Server.
 Die Testdateien erzeugt `npm run testdateien`, sie liegen in `testdateien/` und nie im Repo.

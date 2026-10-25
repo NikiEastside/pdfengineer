@@ -40,13 +40,13 @@ const specs = [
 ---
 
 <Layout
-  title="PDF Engineer – PDFs zusammenfügen und komprimieren ohne Upload"
-  description="PDFs kostenlos zusammenfügen und komprimieren, direkt im Browser. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
+  title="PDF Engineer – PDFs zusammenfügen, teilen und komprimieren ohne Upload"
+  description="PDFs kostenlos zusammenfügen, teilen und komprimieren, direkt im Browser. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
 >
   <PageHero
     size="large"
     title={'PDFs bearbeiten,<br class="hidden sm:block" /> <span class="text-signal">ohne sie hochzuladen.</span>'}
-    lead="Zusammenfügen und komprimieren geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
+    lead="Zusammenfügen, teilen und komprimieren geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
   >
     <a href="/sicherheit/" class="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:underline">
       Selbst nachprüfen, dass nichts hochgeladen wird <span aria-hidden="true">→</span>
@@ -57,7 +57,7 @@ const specs = [
 
   <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
     <SectionHeading id="werkzeuge" label="Werkzeuge" title="Was du hier machen kannst" />
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-3">
       <a
         href="/pdf-zusammenfuegen/"
         class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
@@ -97,6 +97,28 @@ const specs = [
         <h3 class="mt-6 text-xl font-semibold text-ink">PDF komprimieren</h3>
         <p class="mt-2 text-sm leading-relaxed text-graphite">
           Mach große PDFs kleiner, zum Beispiel für E-Mail-Anhänge. Der Text bleibt dabei scharf und markierbar.
+        </p>
+        <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
+          Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </span>
+      </a>
+
+      <a
+        href="/pdf-teilen/"
+        class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+      >
+        <div class="flex items-start justify-between">
+          <span class="grid size-11 place-items-center rounded-xl bg-signal/10 text-signal">
+            <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M4 4h6v16H4zM14 4h6v16h-6z" stroke-linejoin="round"></path>
+              <path d="M12 2v20" stroke-linecap="round" stroke-dasharray="2 2"></path>
+            </svg>
+          </span>
+          <span class="label">Werkzeug 03</span>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-ink">PDF teilen</h3>
+        <p class="mt-2 text-sm leading-relaxed text-graphite">
+          Trenn eine PDF genau dort, wo du willst. Du siehst alle Seiten und setzt die Trennstellen selbst.
         </p>
         <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
           Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
