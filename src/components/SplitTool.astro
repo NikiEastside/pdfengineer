@@ -1,5 +1,5 @@
 ---
-import Dropzone from './Dropzone.astro';
+import PdfIntake from './PdfIntake.astro';
 
 // Oberfläche zum Teilen. Die Logik steht in src/scripts/split-tool.ts. Die Seitenvorschauen
 // und Trennstellen baut das Skript, sobald eine Datei geladen ist.
@@ -16,31 +16,7 @@ const secondary = 'border border-rule bg-sheet text-ink hover:border-rule-strong
   </div>
 
   <div class="p-4 sm:p-5">
-    <div data-intake>
-      <Dropzone multiple={false} />
-    </div>
-
-    <div data-file hidden class="flex items-center gap-3 rounded-xl border border-rule bg-sunken/60 p-3">
-      <div class="min-w-0 flex-1">
-        <p data-file-name class="truncate text-sm font-medium text-ink"></p>
-        <p data-file-meta class="mt-0.5 font-mono text-[11px] tracking-wide text-graphite"></p>
-      </div>
-      <button data-reset type="button" class:list={[button, secondary, 'px-3 py-1.5 text-xs']}>Andere Datei</button>
-    </div>
-
-    <form data-password hidden class="mt-3 flex max-w-sm items-center gap-2">
-      <input
-        name="password"
-        type="password"
-        autocomplete="off"
-        placeholder="Passwort"
-        aria-label="Passwort für die PDF"
-        class="min-w-0 flex-1 rounded-md border border-rule-strong bg-sheet px-2.5 py-1.5 text-sm text-ink placeholder:text-graphite focus:border-signal focus:outline-none"
-      />
-      <button type="submit" class="rounded-md bg-signal px-3 py-1.5 text-xs font-medium text-on-signal transition hover:bg-signal-strong">Öffnen</button>
-    </form>
-
-    <p data-message role="status" aria-live="polite" class="mt-3 font-mono text-[11px] tracking-wide text-danger empty:hidden"></p>
+    <PdfIntake />
 
     <div data-board hidden class="mt-5">
       <p class="text-sm text-graphite">

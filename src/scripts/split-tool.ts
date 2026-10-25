@@ -1,8 +1,9 @@
 import { formatBytes, formatPages } from '../lib/format';
-import { openPdf, type OpenDocument } from '../lib/preview';
+import type { OpenDocument } from '../lib/preview';
 import { rangesFromCuts, type PageRange } from '../lib/split';
 import type { SplitReply, SplitRequest } from '../lib/split.worker';
 import { element } from './pdf-list';
+import { LazyThumbnails, SinglePdf } from './single-pdf';
 
 // Gezeichnet wird für die größere Ansicht. Am Handy verkleinert das CSS das Bild nur.
 const THUMB_WIDTH = 84;
@@ -11,15 +12,6 @@ const root = document.querySelector<HTMLElement>('#split-tool')!;
 const find = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
 
 const count = find<HTMLElement>('[data-count]');
-const intake = find<HTMLElement>('[data-intake]');
-const dropzone = find<HTMLElement>('[data-dropzone]');
-const fileInput = find<HTMLInputElement>('[data-file-input]');
-const fileBar = find<HTMLElement>('[data-file]');
-const fileName = find<HTMLElement>('[data-file-name]');
-const fileMeta = find<HTMLElement>('[data-file-meta]');
-const resetButton = find<HTMLButtonElement>('[data-reset]');
-const passwordForm = find<HTMLFormElement>('[data-password]');
-const message = find<HTMLElement>('[data-message]');
 const board = find<HTMLElement>('[data-board]');
 const pages = find<HTMLOListElement>('[data-pages]');
 const actions = find<HTMLElement>('[data-actions]');
@@ -32,16 +24,12 @@ const result = find<HTMLElement>('[data-result]');
 const resultTitle = find<HTMLElement>('[data-result-title]');
 const downloads = find<HTMLUListElement>('[data-downloads]');
 
-let file: File | undefined;
-let bytes: Uint8Array | undefined;
-let password: string | undefined;
-let doc: OpenDocument | undefined;
 // Eine Trennstelle n heißt: nach Seite n trennen.
 const cuts = new Set<number>();
 let busy = false;
 let worker: Worker | undefined;
 let resultUrls: string[] = [];
-let observer: IntersectionObserver | undefined;
+const thumbnails = new LazyThumbnails(pages, THUMB_WIDTH);
 
 // Wie beim Zusammenfügen startet der Worker mit der Datei, nicht erst beim Klick. Dann klappt
 // das Teilen auch ohne Netz.
@@ -54,130 +42,24 @@ function rangeLabel(range: PageRange) {
   return range.from === range.to ? `Seite ${range.from}` : `Seiten ${range.from}–${range.to}`;
 }
 
-function baseName() {
-  return (file?.name ?? 'dokument.pdf').replace(/\.pdf$/i, '');
-}
-
-// --- Datei laden ---------------------------------------------------------------------------
-
-async function load(next: File) {
-  reset();
-  file = next;
-  intake.hidden = true;
-  fileBar.hidden = false;
-  fileName.textContent = next.name;
-  fileMeta.textContent = `${formatBytes(next.size)} · wird gelesen …`;
-  splitWorker();
-  try {
-    bytes = new Uint8Array(await next.arrayBuffer());
-  } catch {
-    showUnreadable();
-    return;
-  }
-  await open(undefined);
-}
-
-async function open(attempt: string | undefined) {
-  if (!bytes) return;
-  const current = file;
-  const outcome = await openPdf(bytes, attempt);
-  // Während des Lesens eine andere Datei gewählt: Dieses Ergebnis ist überholt.
-  if (current !== file) {
-    if (outcome.status === 'ok') await outcome.document.close();
-    return;
-  }
-  if (outcome.status === 'ok') {
-    doc = outcome.document;
-    password = attempt;
-    passwordForm.hidden = true;
-    message.textContent = '';
-    fileMeta.textContent = `${formatPages(doc.pageCount)} · ${formatBytes(file!.size)}`;
-    buildBoard();
-  } else if (outcome.status === 'password') {
-    passwordForm.hidden = false;
-    fileMeta.textContent = formatBytes(file!.size);
-    message.textContent = outcome.wrongPassword ? 'Falsches Passwort' : 'Passwortgeschützt';
-    passwordForm.querySelector('input')!.focus();
-  } else {
-    showUnreadable();
-  }
-  update();
-}
-
-function showUnreadable() {
-  fileMeta.textContent = file ? formatBytes(file.size) : '';
-  message.textContent = 'Kann nicht geöffnet werden. Keine PDF oder beschädigt?';
-}
-
-function reset() {
-  observer?.disconnect();
-  doc?.close();
-  doc = undefined;
-  file = undefined;
-  bytes = undefined;
-  password = undefined;
-  cuts.clear();
-  clearResults();
-  pages.replaceChildren();
-  board.hidden = true;
-  passwordForm.hidden = true;
-  passwordForm.reset();
-  fileBar.hidden = true;
-  intake.hidden = false;
-  message.textContent = '';
-  update();
-}
+const pdf = new SinglePdf({
+  root,
+  isBusy: () => busy,
+  onFile: splitWorker,
+  onOpen: buildBoard,
+  onReset: () => {
+    thumbnails.stop();
+    cuts.clear();
+    clearResults();
+    pages.replaceChildren();
+    board.hidden = true;
+  },
+  onChange: () => update(),
+});
 
 // --- Seiten zeichnen -----------------------------------------------------------------------
 
-// Höchstens zwei Seiten gleichzeitig zeichnen. Mehr macht es nicht schneller, nur den
-// Speicher voller.
-const queue: number[] = [];
-let rendering = 0;
-
-function enqueue(pageNumber: number) {
-  queue.push(pageNumber);
-  pump();
-}
-
-function pump() {
-  while (rendering < 2 && queue.length > 0) {
-    const pageNumber = queue.shift()!;
-    const current = doc;
-    if (!current) return;
-    rendering++;
-    current
-      .render(pageNumber, THUMB_WIDTH)
-      .then((canvas) => {
-        // Inzwischen eine andere Datei geladen: Die Vorschau gehört nicht mehr hierher.
-        if (doc !== current) return;
-        canvas.className = 'max-h-full max-w-full';
-        pages.querySelector(`[data-thumb="${pageNumber}"]`)?.replaceChildren(canvas);
-      })
-      .catch(() => {})
-      .finally(() => {
-        rendering--;
-        pump();
-      });
-  }
-}
-
-function buildBoard() {
-  if (!doc) return;
-  queue.length = 0;
-  observer?.disconnect();
-  // Erst zeichnen, wenn eine Seite in die Nähe des sichtbaren Bereichs kommt.
-  observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        observer!.unobserve(entry.target);
-        enqueue(Number((entry.target as HTMLElement).dataset.thumb));
-      }
-    },
-    { rootMargin: '300px' },
-  );
-
+function buildBoard(doc: OpenDocument) {
   const items: HTMLLIElement[] = [];
   for (let n = 1; n <= doc.pageCount; n++) {
     const item = element('li', 'flex');
@@ -222,18 +104,18 @@ function buildBoard() {
     items.push(item);
   }
   pages.replaceChildren(...items);
-  for (const thumb of pages.querySelectorAll('[data-thumb]')) observer.observe(thumb);
+  thumbnails.start(doc);
   board.hidden = false;
 }
 
 // --- Anzeigen ------------------------------------------------------------------------------
 
 function update() {
-  const ready = doc !== undefined;
-  const pageCount = doc?.pageCount ?? 0;
+  const ready = pdf.doc !== undefined;
+  const pageCount = pdf.doc?.pageCount ?? 0;
   const ranges = ready ? rangesFromCuts(pageCount, cuts) : [];
 
-  count.textContent = ready ? formatPages(pageCount) : file ? '1 Datei' : 'Keine Datei';
+  count.textContent = ready ? formatPages(pageCount) : pdf.file ? '1 Datei' : 'Keine Datei';
   actions.hidden = !ready;
 
   for (const gap of pages.querySelectorAll<HTMLButtonElement>('[data-cut]')) {
@@ -273,8 +155,7 @@ function update() {
 
   splitButton.disabled = busy || cuts.size === 0;
   clearButton.disabled = busy || cuts.size === 0;
-  resetButton.disabled = busy;
-  fileInput.disabled = busy;
+  pdf.setBusy(busy);
 }
 
 function clearResults() {
@@ -296,9 +177,9 @@ function toggleCut(cut: number) {
 // --- Teilen --------------------------------------------------------------------------------
 
 async function split() {
-  if (!doc || !bytes || cuts.size === 0 || busy) return;
-  const ranges = rangesFromCuts(doc.pageCount, cuts);
-  const request: SplitRequest = { bytes, password, ranges };
+  if (!pdf.doc || !pdf.bytes || cuts.size === 0 || busy) return;
+  const ranges = rangesFromCuts(pdf.doc.pageCount, cuts);
+  const request: SplitRequest = { bytes: pdf.bytes, password: pdf.password, ranges };
   busy = true;
   clearResults();
   status.textContent = 'Teile …';
@@ -318,13 +199,13 @@ async function split() {
 
   if (reply.ok) {
     status.textContent = '';
-    resultTitle.textContent = `${reply.parts.length} Teile fertig${password ? ' · ohne Passwort' : ''}`;
+    resultTitle.textContent = `${reply.parts.length} Teile fertig${pdf.password ? ' · ohne Passwort' : ''}`;
     downloads.replaceChildren(
       ...reply.parts.map((part, index) => {
         const blob = new Blob([part as Uint8Array<ArrayBuffer>], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         resultUrls.push(url);
-        const name = `${baseName()}-teil-${index + 1}.pdf`;
+        const name = `${pdf.baseName}-teil-${index + 1}.pdf`;
         const row = element('li', 'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg bg-sheet px-3 py-2');
         const text = element('div', 'min-w-0');
         text.append(
@@ -350,24 +231,6 @@ async function split() {
 }
 
 // --- Bedienung -----------------------------------------------------------------------------
-
-fileInput.addEventListener('change', () => {
-  const next = fileInput.files?.[0];
-  if (next && !busy) load(next);
-  fileInput.value = '';
-});
-
-resetButton.addEventListener('click', () => {
-  if (!busy) reset();
-});
-
-passwordForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const attempt = (passwordForm.elements.namedItem('password') as HTMLInputElement).value;
-  if (attempt === '') return;
-  message.textContent = '';
-  open(attempt);
-});
 
 pages.addEventListener('click', (event) => {
   if (swallowClick) {
@@ -436,22 +299,4 @@ pages.addEventListener('pointerup', (event) => {
 pages.addEventListener('pointercancel', () => {
   drag = undefined;
   clearDropTargets();
-});
-
-// Wie bei den anderen Werkzeugen: Eine PDF darf überall auf der Seite landen.
-const carriesFiles = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
-window.addEventListener('dragover', (event) => {
-  if (!carriesFiles(event)) return;
-  event.preventDefault();
-  dropzone.dataset.active = '';
-});
-window.addEventListener('dragleave', (event) => {
-  if (event.relatedTarget === null) delete dropzone.dataset.active;
-});
-window.addEventListener('drop', (event) => {
-  if (!carriesFiles(event)) return;
-  event.preventDefault();
-  delete dropzone.dataset.active;
-  const next = event.dataTransfer!.files[0];
-  if (next && !busy) load(next);
 });

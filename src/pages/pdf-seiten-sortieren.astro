@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import SortTool from '../components/SortTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus. Jede Seite erscheint als Kachel.',
+  },
+  {
+    title: 'Neu anordnen',
+    text: 'Zieh die Kacheln in die Reihenfolge, die du brauchst. Schiefe Seiten drehst du, leere entfernst du.',
+  },
+  {
+    title: 'Speichern',
+    text: 'Ein Klick auf „Speichern“, und du bekommst die PDF in der neuen Ordnung.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die Seiten werden direkt in deinem Browser neu angeordnet. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Wie verschiebe ich eine Seite am Handy?',
+    answer:
+      'Halt die Kachel kurz gedrückt, bis sie größer wird, und zieh sie dann an ihre neue Stelle. Kurz wischen scrollt wie gewohnt.',
+  },
+  {
+    question: 'Geht das auch mit der Tastatur?',
+    answer:
+      'Ja. Wähl eine Kachel mit der Tabulatortaste aus und verschieb sie mit den Pfeiltasten. R dreht die Seite, Entf entfernt sie.',
+  },
+  {
+    question: 'Kann ich mich verklicken?',
+    answer:
+      'Nichts ist endgültig, bis du speicherst. „Zurücksetzen“ stellt die ursprüngliche Reihenfolge wieder her, auch entfernte Seiten kommen zurück. Deine Originaldatei bleibt sowieso unverändert.',
+  },
+  {
+    question: 'Bleibt die Qualität erhalten?',
+    answer:
+      'Ja. Die Seiten werden nur umsortiert und gedreht, nichts wird neu berechnet oder verkleinert.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die gespeicherte PDF hat danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="PDF-Seiten sortieren – kostenlos und ohne Upload | PDF Engineer"
+  description="Seiten einer PDF kostenlos neu anordnen, drehen oder entfernen, direkt im Browser. Kacheln ziehen, fertig. Ohne Upload und ohne Anmeldung."
+>
+  <PageHero
+    label="Werkzeug 04 / Sortieren"
+    title="PDF-Seiten sortieren"
+    lead="Ordne die Seiten einer PDF neu an, indem du sie einfach an ihre Stelle ziehst. Dreh schiefe Seiten und entferne überflüssige. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-4xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <SortTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

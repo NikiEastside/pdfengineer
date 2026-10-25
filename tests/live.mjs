@@ -26,7 +26,7 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 if (!existsSync(join(FILES, '6-zehn-seiten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
 
 const pdfjs = await import('../node_modules/pdfjs-dist/legacy/build/pdf.mjs');
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -34,6 +34,13 @@ const check = (name, condition, detail = '') => {
   if (!condition) failed++;
   console.log(`${condition ? 'ok  ' : 'FEHLER'} ${name}${detail ? ` · ${detail}` : ''}`);
 };
+
+async function pdfRotations(path) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
+  const rotations = [];
+  for (let i = 1; i <= doc.numPages; i++) rotations.push((await doc.getPage(i)).rotate);
+  return rotations;
+}
 
 async function pdfTexts(path) {
   const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
@@ -284,6 +291,70 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     } catch {}
     problems.splice(before);
     check(`${engineName} teilen: klappt offline`, offline);
+    await context.close();
+  }
+
+
+  // ---------- Sortieren ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-seiten-sortieren/', { waitUntil: 'networkidle' });
+    await page.setInputFiles('#sort-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#sort-tool [data-board]').waitFor({ state: 'visible', timeout: 30000 });
+    const tile = (n) => page.locator(`#sort-tool li[data-source="${n}"]`);
+    const order = () => page.locator('#sort-tool li[data-source]').evaluateAll((items) => items.map((item) => item.dataset.source).join(','));
+    check(`${engineName} sortieren: 10 Kacheln, Speichern gesperrt`, (await page.locator('#sort-tool li[data-source]').count()) === 10 && (await page.locator('#sort-tool [data-save]').isDisabled()));
+
+    // Seite 1 auf die rechte Hälfte von Seite 3 ziehen, in kleinen Schritten wie eine Hand.
+    // Vorher ins Bild scrollen: Die Maus greift nur im sichtbaren Bereich.
+    await tile(1).scrollIntoViewIfNeeded();
+    const from = await tile(1).boundingBox();
+    const to = await tile(3).boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    for (let step = 1; step <= 10; step++) {
+      await page.mouse.move(from.x + from.width / 2 + ((to.x + to.width * 0.8 - from.x - from.width / 2) * step) / 10, to.y + to.height / 2);
+    }
+    await page.mouse.up();
+    check(`${engineName} sortieren: Ziehen`, (await order()).startsWith('2,3,1,4'), await order());
+
+    await tile(2).locator('[data-action=rotate]').click();
+    await tile(10).locator('[data-action=remove]').click();
+    await tile(4).focus();
+    await page.keyboard.press('ArrowLeft');
+    check(`${engineName} sortieren: Tastatur`, (await order()) === '2,3,4,1,5,6,7,8,9', await order());
+    check(`${engineName} sortieren: Zusammenfassung`, (await page.locator('#sort-tool [data-summary]').textContent()) === '9 Seiten · neu sortiert · 1 gedreht · 1 entfernt', await page.locator('#sort-tool [data-summary]').textContent());
+
+    await page.locator('#sort-tool [data-save]').click();
+    await page.locator('#sort-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#sort-tool [data-download]').click()]);
+    const saved = join(DOWNLOADS, `${engineName}-sortiert.pdf`);
+    await download.saveAs(saved);
+    const texts = await pdfTexts(saved);
+    const rotations = await pdfRotations(saved);
+    check(
+      `${engineName} sortieren: Ergebnis in neuer Reihenfolge, gedreht, ohne Seite 10`,
+      texts.map((text) => text.replace('Seite ', '')).join(',') === '2,3,4,1,5,6,7,8,9' && rotations[0] === 90 && rotations[1] === 0,
+      `${texts.map((text) => text.replace('Seite ', '')).join(',')} · Drehung ${rotations.slice(0, 2).join('/')}`,
+    );
+    check(`${engineName} sortieren: Dateiname`, download.suggestedFilename() === '6-zehn-seiten-sortiert.pdf', download.suggestedFilename());
+
+    await page.locator('#sort-tool [data-restore]').click();
+    check(`${engineName} sortieren: Zurücksetzen`, (await order()) === '1,2,3,4,5,6,7,8,9,10' && (await page.locator('#sort-tool [data-result]').isHidden()));
+
+    await context.setOffline(true);
+    const before = problems.length;
+    let offline = false;
+    try {
+      await tile(1).locator('[data-action=rotate]').click();
+      await page.locator('#sort-tool [data-save]').click();
+      await page.locator('#sort-tool [data-result]').waitFor({ state: 'visible', timeout: 30000 });
+      offline = true;
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} sortieren: klappt offline`, offline);
     await context.close();
   }
 
