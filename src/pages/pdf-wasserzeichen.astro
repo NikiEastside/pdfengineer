@@ -1,0 +1,80 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import WatermarkTool from '../components/WatermarkTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus.',
+  },
+  {
+    title: 'Text und Art wählen',
+    text: 'Schreib, was draufstehen soll, und wähl diagonal oder gekachelt, Farbe, Deckkraft und Größe. Die Vorschau zeigt sofort, wie es aussieht.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Ein Klick auf „Wasserzeichen einfügen“, und jede Seite trägt deinen Text.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Wozu ein Wasserzeichen auf einer Ausweiskopie?',
+    answer:
+      'Damit niemand die Kopie für etwas anderes benutzen kann. Ein Vermerk wie „Nur zur Vorlage bei der Hausverwaltung Müller, Oktober 2026“ quer über die Seite macht klar, wofür sie gedacht ist. Verbraucherzentralen empfehlen das für Kopien von Ausweisen, Gehaltsnachweisen und Kontoauszügen.',
+  },
+  {
+    question: 'Diagonal oder gekachelt?',
+    answer:
+      'Diagonal ist ein großer Schriftzug quer über die Seite, gut für Vermerke wie „ENTWURF“ oder „KOPIE“. Gekachelt verteilt den Text klein und vielfach über die ganze Seite. So lässt er sich kaum wegretuschieren, deshalb ist das die bessere Wahl für Ausweiskopien.',
+  },
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Das Wasserzeichen kommt direkt in deinem Browser auf die Seiten. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Welche Zeichen kann ich verwenden?',
+    answer:
+      'Alle westeuropäischen Buchstaben samt Umlauten, Ziffern und die üblichen Satzzeichen, auch €. Zeichen aus anderen Schriften, etwa polnische Sonderbuchstaben oder Emojis, kann die eingebaute Schrift nicht darstellen. Das sagt dir die Seite dann.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die fertige PDF hat danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="Wasserzeichen in PDF einfügen – kostenlos und ohne Upload | PDF Engineer"
+  description="Wasserzeichen kostenlos in eine PDF einfügen, direkt im Browser. Diagonal oder gekachelt, etwa „KOPIE“ auf Ausweiskopien. Ohne Upload und ohne Anmeldung."
+>
+  <PageHero
+    crumbs={[{ href: '/', text: 'Start' }, { href: '/#werkzeuge', text: 'Werkzeuge' }]}
+    label="Wasserzeichen einfügen"
+    title="Wasserzeichen einfügen"
+    lead="Schreib „KOPIE“, „ENTWURF“ oder „Nur zur Vorlage bei …“ quer über jede Seite, etwa bevor du eine Ausweiskopie verschickst. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-4xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <WatermarkTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

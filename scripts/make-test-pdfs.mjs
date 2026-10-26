@@ -2,7 +2,7 @@
 // Erzeugt statt kopiert, weil das Repo öffentlich ist und echte Dokumente nie hineingehören.
 //
 //   npm run testdateien
-import { PDFDocument, PDFHexString, PDFName, StandardFonts, rgb } from '@cantoo/pdf-lib';
+import { degrees, PDFDocument, PDFHexString, PDFName, StandardFonts, rgb } from '@cantoo/pdf-lib';
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -118,5 +118,16 @@ await images('5-bilder-gross.pdf');
   const stream = doc.context.stream(xmp, { Type: 'Metadata', Subtype: 'XML' });
   doc.catalog.set(PDFName.of('Metadata'), doc.context.register(stream));
   writeFileSync(`${dir}/7-mit-metadaten.pdf`, await doc.save());
+}
+// Eine hochkant gespeicherte Seite mit /Rotate 90, also quer angezeigt, wie sie Scanner oft
+// schreiben. Wasserzeichen und Seitenzahlen müssen sich nach der Anzeige richten, nicht nach
+// der gespeicherten Lage.
+{
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([595, 842]);
+  page.drawText('Gedrehte Seite', { x: 60, y: 760, font, size: 24 });
+  page.setRotation(degrees(90));
+  writeFileSync(`${dir}/8-gedreht.pdf`, await doc.save());
 }
 console.log(`Testdateien in ${dir}/ erzeugt.`);

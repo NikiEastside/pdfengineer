@@ -24,7 +24,7 @@ const FILES = 'testdateien';
 const DOWNLOADS = join(tmpdir(), 'pdfengineer-test');
 mkdirSync(DOWNLOADS, { recursive: true });
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
-if (!existsSync(join(FILES, '7-mit-metadaten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
+if (!existsSync(join(FILES, '8-gedreht.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
 
 const pdfjs = await import('../node_modules/pdfjs-dist/legacy/build/pdf.mjs');
 
@@ -86,7 +86,7 @@ async function pdfPageSizes(path) {
   }
   return sizes.join(' ');
 }
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/pdf-in-bild/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/pdf-in-bild/', '/pdf-wasserzeichen/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -100,6 +100,16 @@ async function pdfRotations(path) {
   const rotations = [];
   for (let i = 1; i <= doc.numPages; i++) rotations.push((await doc.getPage(i)).rotate);
   return rotations;
+}
+
+// Wo und wie schräg ein Text auf Seite 1 steht. Der Winkel ist der im PDF selbst, also vor
+// der Drehung der Seite. pdf.js liefert dazu /Rotate, damit sich die Anzeige errechnen lässt.
+async function textOnFirstPage(path, text) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
+  const page = await doc.getPage(1);
+  const items = (await page.getTextContent()).items.filter((item) => item.str === text);
+  const [a, b] = items[0]?.transform ?? [1, 0];
+  return { count: items.length, angle: Math.round((Math.atan2(b, a) * 180) / Math.PI), rotate: page.rotate };
 }
 
 async function pdfInfo(path) {
@@ -584,6 +594,65 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
       zipped === '10 Dateien · 6-zehn-seiten-seite-01.png · png 595x842 · 6-zehn-seiten-bilder.zip',
       zipped,
     );
+    await context.close();
+  }
+
+
+  // ---------- Wasserzeichen ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-wasserzeichen/', { waitUntil: 'networkidle' });
+    const apply = async (name) => {
+      await page.locator('#watermark-tool [data-apply]').click();
+      await page.locator('#watermark-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+      const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#watermark-tool [data-download]').click()]);
+      const target = join(DOWNLOADS, `${engineName}-${name}`);
+      await download.saveAs(target);
+      return { target, filename: download.suggestedFilename() };
+    };
+
+    await page.setInputFiles('#watermark-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#watermark-tool [data-options]').waitFor({ state: 'visible', timeout: 30000 });
+    // Die Vorschau muss etwas zeigen: Pixel auf der Wasserzeichen-Ebene, die nicht leer sind.
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector('#watermark-tool [data-preview-mark]');
+      if (!canvas?.width) return false;
+      const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0) return true;
+      return false;
+    }, null, { timeout: 10000 });
+    check(`${engineName} wasserzeichen: Vorschau zeichnet`, true);
+
+    const diagonal = await apply('wz-diagonal.pdf');
+    const onA4 = await textOnFirstPage(diagonal.target, 'KOPIE');
+    check(`${engineName} wasserzeichen: diagonal entlang der Seitendiagonale`, onA4.count === 1 && onA4.angle === 55, JSON.stringify(onA4));
+    check(`${engineName} wasserzeichen: Dateiname`, diagonal.filename === '6-zehn-seiten-wasserzeichen.pdf', diagonal.filename);
+
+    await page.locator('#watermark-tool label:has(input[value=tiled])').click();
+    const tiled = await textOnFirstPage((await apply('wz-gekachelt.pdf')).target, 'KOPIE');
+    check(`${engineName} wasserzeichen: gekachelt vielfach`, tiled.count >= 10 && tiled.angle === 30, JSON.stringify(tiled));
+
+    await page.locator('#watermark-tool input[name=text]').fill('Łódź');
+    await page.locator('#watermark-tool [data-apply]').click();
+    await page.waitForFunction(() => document.querySelector('#watermark-tool [data-status]')?.textContent.includes('„Ł“'), null, { timeout: 30000 });
+    check(`${engineName} wasserzeichen: unbekanntes Zeichen gemeldet statt „?“`, true);
+
+    // Gedrehte Seite: In der Anzeige quer (842 x 595), das Wasserzeichen muss deren Diagonale
+    // folgen. Im PDF selbst steht es dann um 90° weiter gedreht.
+    await page.locator('#watermark-tool input[name=text]').fill('KOPIE');
+    await page.locator('#watermark-tool label:has(input[value=diagonal])').click();
+    await page.setInputFiles('#watermark-tool [data-file-input]', join(FILES, '8-gedreht.pdf'));
+    await page.locator('#watermark-tool [data-options]').waitFor({ state: 'visible', timeout: 30000 });
+    await context.setOffline(true);
+    const before = problems.length;
+    let turned;
+    try {
+      turned = await textOnFirstPage((await apply('wz-gedreht.pdf')).target, 'KOPIE');
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} wasserzeichen: gedrehte Seite richtig, auch offline`, turned?.rotate === 90 && turned?.angle === 125, JSON.stringify(turned));
     await context.close();
   }
 

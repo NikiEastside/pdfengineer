@@ -1,0 +1,127 @@
+---
+import PdfIntake from './PdfIntake.astro';
+import { COLORS } from '../lib/watermark-layout';
+
+// Oberfläche für Wasserzeichen. Die Logik steht in src/scripts/watermark-tool.ts.
+const button =
+  'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-40';
+const primary = 'bg-signal text-on-signal shadow-sm hover:bg-signal-strong';
+const segment =
+  'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-graphite transition hover:text-ink has-checked:bg-signal has-checked:text-on-signal has-focus-visible:outline-2 has-focus-visible:outline-signal';
+const modes = [
+  { value: 'diagonal', label: 'Diagonal' },
+  { value: 'tiled', label: 'Gekachelt' },
+];
+// Feste Klassen je Farbe für das Farbmuster, damit Tailwind sie findet.
+const swatch: Record<string, string> = { grau: 'bg-[#6b7280]', rot: 'bg-[#c72924]', blau: 'bg-[#1c5cd6]' };
+---
+
+<section id="watermark-tool" class="crop-marks rounded-2xl border border-rule bg-sheet shadow-[0_1px_0_var(--color-rule),0_12px_40px_-16px_rgb(14_24_40/0.18)]">
+  <div class="flex items-center justify-between border-b border-rule px-4 py-3 sm:px-5">
+    <p class="label">Eingabe</p>
+    <p data-count class="font-mono text-xs text-graphite">Keine Datei</p>
+  </div>
+
+  <div class="p-4 sm:p-5">
+    <PdfIntake />
+
+    <form data-options hidden class="mt-5 grid gap-6 md:grid-cols-[1fr_15rem]" autocomplete="off">
+      <div class="space-y-5">
+        <label class="block">
+          <span class="label">Text</span>
+          <input
+            name="text"
+            type="text"
+            value="KOPIE"
+            maxlength="80"
+            class="mt-1.5 w-full rounded-md border border-rule-strong bg-sheet px-3 py-2 text-sm text-ink focus:border-signal focus:outline-none"
+          />
+          <span class="mt-1.5 block text-xs text-graphite">Zum Beispiel „Nur zur Vorlage bei der Hausverwaltung“.</span>
+        </label>
+
+        <fieldset>
+          <legend class="label">Art</legend>
+          <div class="mt-2 inline-flex rounded-xl border border-rule bg-sheet p-1">
+            {
+              modes.map((mode) => (
+                <label class={segment}>
+                  <input type="radio" name="mode" value={mode.value} checked={mode.value === 'diagonal'} class="sr-only" />
+                  {mode.label}
+                </label>
+              ))
+            }
+          </div>
+          <span class="mt-1.5 block text-xs text-graphite">Gekachelt lässt sich kaum wegretuschieren, gut für Ausweiskopien.</span>
+        </fieldset>
+
+        <fieldset>
+          <legend class="label">Farbe</legend>
+          <div class="mt-2 inline-flex rounded-xl border border-rule bg-sheet p-1">
+            {
+              Object.entries(COLORS).map(([value, color]) => (
+                <label class={segment}>
+                  <input type="radio" name="color" value={value} checked={value === 'grau'} class="sr-only" />
+                  <span class:list={['size-3 rounded-full ring-1 ring-sheet', swatch[value]]} aria-hidden="true" />
+                  {color.label}
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <label class="block">
+            <span class="label flex justify-between">Deckkraft <span data-opacity-value class="text-ink">30 %</span></span>
+            <input name="opacity" type="range" min="10" max="80" step="5" value="30" class="mt-2 w-full accent-signal" />
+          </label>
+          <label class="block">
+            <span class="label">Größe</span>
+            <input name="size" type="range" min="1" max="5" step="1" value="3" class="mt-2 w-full accent-signal" />
+          </label>
+        </div>
+      </div>
+
+      <figure>
+        <figcaption class="label">Vorschau · Seite 1</figcaption>
+        <div data-preview class="relative mt-2 overflow-hidden rounded-md border border-rule bg-sunken shadow-sm">
+          <canvas data-preview-page class="block h-auto w-full"></canvas>
+          <canvas data-preview-mark class="absolute inset-0 h-full w-full"></canvas>
+        </div>
+      </figure>
+    </form>
+  </div>
+
+  <div data-actions hidden class="border-t border-rule bg-sunken/60 px-4 py-4 sm:px-5">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p data-summary class="font-mono text-xs tracking-wide text-ink"></p>
+      <button data-apply type="button" class:list={[button, primary]}>
+        <svg aria-hidden="true" viewBox="0 0 20 20" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 15 15 5M8 15h7V8" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        Wasserzeichen einfügen
+      </button>
+    </div>
+    <p data-status role="status" aria-live="polite" class="mt-3 text-sm text-ink empty:hidden"></p>
+  </div>
+
+  <div data-result hidden class="border-t border-rule px-4 py-4 sm:px-5">
+    <div class="flex flex-col gap-4 rounded-xl border border-ok/30 bg-ok/8 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ok text-sheet" aria-hidden="true">
+          <svg viewBox="0 0 20 20" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="m5 10.5 3.2 3L15 6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="font-medium text-ink">Deine PDF ist fertig</p>
+          <p data-result-text class="mt-0.5 text-sm text-graphite"></p>
+        </div>
+      </div>
+      <a data-download class:list={[button, primary]} href="#">Herunterladen</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import '../scripts/watermark-tool';
+</script>
