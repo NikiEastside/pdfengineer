@@ -4,11 +4,15 @@
 // dahinter, weil es nach unten ausgeblendet wird und diese Maske sonst auch den Text träfe.
 interface Props {
   label?: string;
+  // Der Weg zur Seite, vor der Beschriftung, etwa Start / Werkzeuge. Die Zeile sieht aus wie ein
+  // Pfad, also muss man ihn auch zurückgehen können. Die Beschriftung selbst ist die aktuelle
+  // Seite und deshalb kein Link.
+  crumbs?: { href: string; text: string }[];
   title: string;
   lead?: string;
   size?: 'large' | 'normal';
 }
-const { label, title, lead, size = 'normal' } = Astro.props;
+const { label, crumbs = [], title, lead, size = 'normal' } = Astro.props;
 const hasAside = Astro.slots.has('aside');
 ---
 
@@ -24,10 +28,21 @@ const hasAside = Astro.slots.has('aside');
     <div>
       {
         label && (
-          <p class="label flex items-center gap-2.5">
+          <nav aria-label="Pfad" class="label flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span class="h-px w-6 bg-mark" aria-hidden="true" />
-            {label}
-          </p>
+            {crumbs.map((crumb) => (
+              <>
+                <a
+                  href={crumb.href}
+                  class="text-signal underline decoration-signal/40 underline-offset-4 transition hover:decoration-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+                >
+                  {crumb.text}
+                </a>
+                <span aria-hidden="true">/</span>
+              </>
+            ))}
+            <span aria-current={crumbs.length > 0 ? 'page' : undefined}>{label}</span>
+          </nav>
         )
       }
       <h1

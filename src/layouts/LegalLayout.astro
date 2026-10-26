@@ -5,14 +5,13 @@ import PageHero from '../components/PageHero.astro';
 interface Props {
   title: string;
   description: string;
-  label: string;
   heading: string;
 }
-const { title, description, label, heading } = Astro.props;
+const { title, description, heading } = Astro.props;
 ---
 
 <Layout title={title} description={description} noindex>
-  <PageHero label={label} title={heading} />
+  <PageHero crumbs={[{ href: '/', text: 'Start' }]} label={heading} title={heading} />
   <article class="prose-page mx-auto max-w-3xl px-4 pt-12 sm:px-6">
     <slot />
   </article>
