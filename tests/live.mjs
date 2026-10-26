@@ -86,7 +86,7 @@ async function pdfPageSizes(path) {
   }
   return sizes.join(' ');
 }
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/pdf-in-bild/', '/pdf-wasserzeichen/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/pdf-in-bild/', '/pdf-wasserzeichen/', '/pdf-seitenzahlen/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -110,6 +110,18 @@ async function textOnFirstPage(path, text) {
   const items = (await page.getTextContent()).items.filter((item) => item.str === text);
   const [a, b] = items[0]?.transform ?? [1, 0];
   return { count: items.length, angle: Math.round((Math.atan2(b, a) * 180) / Math.PI), rotate: page.rotate };
+}
+
+// Alle Textstücke einer Seite mit Lage und Winkel, für die Seitenzahlen.
+async function pageTexts(path, pageNumber) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
+  const page = await doc.getPage(pageNumber);
+  return (await page.getTextContent()).items.map((item) => ({
+    str: item.str,
+    x: Math.round(item.transform[4] + item.width / 2),
+    y: Math.round(item.transform[5]),
+    angle: Math.round((Math.atan2(item.transform[1], item.transform[0]) * 180) / Math.PI),
+  }));
 }
 
 async function pdfInfo(path) {
@@ -653,6 +665,70 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     } catch {}
     problems.splice(before);
     check(`${engineName} wasserzeichen: gedrehte Seite richtig, auch offline`, turned?.rotate === 90 && turned?.angle === 125, JSON.stringify(turned));
+    await context.close();
+  }
+
+
+  // ---------- Seitenzahlen ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-seitenzahlen/', { waitUntil: 'networkidle' });
+    const apply = async (name) => {
+      await page.locator('#page-numbers-tool [data-apply]').click();
+      await page.locator('#page-numbers-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+      const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#page-numbers-tool [data-download]').click()]);
+      const target = join(DOWNLOADS, `${engineName}-${name}`);
+      await download.saveAs(target);
+      return { target, filename: download.suggestedFilename() };
+    };
+    const set = (name, value) => page.locator(`#page-numbers-tool [name=${name}]`).fill(String(value));
+
+    await page.setInputFiles('#page-numbers-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#page-numbers-tool [data-options]').waitFor({ state: 'visible', timeout: 30000 });
+    await set('fromPage', 2);
+    check(
+      `${engineName} seitenzahlen: Zusammenfassung ohne Deckblatt`,
+      (await page.locator('#page-numbers-tool [data-summary]').textContent()) === '9 Seiten nummeriert · „Seite 1 von 9“ bis „Seite 9 von 9“',
+      await page.locator('#page-numbers-tool [data-summary]').textContent(),
+    );
+    await page.waitForFunction(() => document.querySelector('#page-numbers-tool [data-preview-caption]')?.textContent === 'Vorschau · Seite 2', null, { timeout: 10000 });
+    check(`${engineName} seitenzahlen: Vorschau zeigt erste nummerierte Seite`, true);
+
+    const first = await apply('sz-ohne-deckblatt.pdf');
+    const cover = (await pageTexts(first.target, 1)).filter((item) => item.str.includes(' von '));
+    const second = (await pageTexts(first.target, 2)).find((item) => item.str === 'Seite 1 von 9');
+    const last = (await pageTexts(first.target, 10)).find((item) => item.str === 'Seite 9 von 9');
+    check(
+      `${engineName} seitenzahlen: Deckblatt frei, unten mittig 10 mm über dem Rand`,
+      cover.length === 0 && second?.x === 298 && second?.y === 28 && last !== undefined,
+      JSON.stringify({ cover: cover.length, second, last: last?.str }),
+    );
+    check(`${engineName} seitenzahlen: Dateiname`, first.filename === '6-zehn-seiten-seitenzahlen.pdf', first.filename);
+
+    await page.locator('#page-numbers-tool label:has(input[value=top-right])').click();
+    await page.locator('#page-numbers-tool label:has(input[value=slash])').click();
+    await set('fromPage', 1);
+    await set('startNumber', 5);
+    const topRight = (await pageTexts((await apply('sz-oben-rechts.pdf')).target, 1)).find((item) => item.str === '5 / 14');
+    check(`${engineName} seitenzahlen: oben rechts, ab 5`, topRight !== undefined && topRight.x > 520 && topRight.y > 790, JSON.stringify(topRight));
+
+    // Gedrehte Seite: In der Anzeige quer. Die Zahl muss dort waagerecht unten mittig stehen,
+    // im PDF selbst also um 90° gedreht.
+    await page.locator('#page-numbers-tool label:has(input[value=bottom-center])').click();
+    await page.locator('#page-numbers-tool label:has(input[value=pageOf])').click();
+    await page.setInputFiles('#page-numbers-tool [data-file-input]', join(FILES, '8-gedreht.pdf'));
+    await page.locator('#page-numbers-tool [data-options]').waitFor({ state: 'visible', timeout: 30000 });
+    await set('startNumber', 1);
+    await context.setOffline(true);
+    const before = problems.length;
+    let turned;
+    try {
+      turned = (await pageTexts((await apply('sz-gedreht.pdf')).target, 1)).find((item) => item.str === 'Seite 1 von 1');
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} seitenzahlen: gedrehte Seite richtig, auch offline`, turned?.angle === 90, JSON.stringify(turned));
     await context.close();
   }
 

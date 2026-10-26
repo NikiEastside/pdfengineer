@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import PageNumbersTool from '../components/PageNumbersTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus.',
+  },
+  {
+    title: 'Einstellen',
+    text: 'Wähl, wo die Zahl stehen soll und wie sie aussieht, und ob das Deckblatt ausgelassen wird. Die Vorschau zeigt es sofort.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Ein Klick auf „Seitenzahlen einfügen“, und jede Seite hat ihre Nummer.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Wie lasse ich das Deckblatt aus?',
+    answer:
+      'Stell „Ab Seite“ auf 2. Dann bekommt die erste Seite keine Zahl, und die zweite beginnt mit 1. Soll sie stattdessen mit 2 beginnen, stell „Beginnt mit“ auf 2.',
+  },
+  {
+    question: 'Was bedeutet „Seite 1 von 10“, wenn ich das Deckblatt auslasse?',
+    answer:
+      'Die Gesamtzahl richtet sich nach den nummerierten Seiten. Bei zehn Seiten ohne Deckblatt steht also „Seite 1 von 9“ bis „Seite 9 von 9“.',
+  },
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die Seitenzahlen kommen direkt in deinem Browser auf die Seiten. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Was ist mit quer gestellten Seiten?',
+    answer: 'Die Zahl richtet sich nach der Seite, wie du sie siehst. Auch auf Querseiten steht sie also waagerecht am unteren oder oberen Rand.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer:
+      'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät. Die fertige PDF hat danach kein Passwort mehr.',
+  },
+];
+---
+
+<Layout
+  title="Seitenzahlen in PDF einfügen – kostenlos und ohne Upload | PDF Engineer"
+  description="Seitenzahlen kostenlos in eine PDF einfügen, direkt im Browser. Position und Format wählbar, Deckblatt auslassen möglich. Ohne Upload und ohne Anmeldung."
+>
+  <PageHero
+    crumbs={[{ href: '/', text: 'Start' }, { href: '/#werkzeuge', text: 'Werkzeuge' }]}
+    label="Seitenzahlen einfügen"
+    title="Seitenzahlen einfügen"
+    lead="Nummerier die Seiten deiner PDF, wo und wie du willst, auf Wunsch ohne Deckblatt. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-4xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <PageNumbersTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

@@ -1,0 +1,125 @@
+---
+import PdfIntake from './PdfIntake.astro';
+import { FORMATS, POSITIONS } from '../lib/page-numbers-layout';
+
+// Oberfläche für Seitenzahlen. Die Logik steht in src/scripts/page-numbers-tool.ts.
+const button =
+  'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-40';
+const primary = 'bg-signal text-on-signal shadow-sm hover:bg-signal-strong';
+// Optionsfelder statt einer Auswahlliste: <select> löst in WebKit unter der CSP eine Meldung
+// über ein blockiertes Stylesheet aus, und die anderen Werkzeuge sehen auch so aus.
+const segment =
+  'cursor-pointer rounded-lg px-3 py-1.5 text-center text-sm text-graphite transition hover:text-ink has-checked:bg-signal has-checked:text-on-signal has-focus-visible:outline-2 has-focus-visible:outline-signal has-disabled:cursor-not-allowed';
+const field =
+  'mt-1.5 w-full rounded-md border border-rule-strong bg-sheet px-3 py-2 text-sm text-ink focus:border-signal focus:outline-none disabled:opacity-60';
+// Lage der sechs Punkte in der Seitenskizze. Feste Klassen, damit Tailwind sie findet.
+const spots: Record<string, string> = {
+  'top-left': 'top-2 left-2',
+  'top-center': 'top-2 left-1/2 -translate-x-1/2',
+  'top-right': 'top-2 right-2',
+  'bottom-left': 'bottom-2 left-2',
+  'bottom-center': 'bottom-2 left-1/2 -translate-x-1/2',
+  'bottom-right': 'bottom-2 right-2',
+};
+---
+
+<section id="page-numbers-tool" class="crop-marks rounded-2xl border border-rule bg-sheet shadow-[0_1px_0_var(--color-rule),0_12px_40px_-16px_rgb(14_24_40/0.18)]">
+  <div class="flex items-center justify-between border-b border-rule px-4 py-3 sm:px-5">
+    <p class="label">Eingabe</p>
+    <p data-count class="font-mono text-xs text-graphite">Keine Datei</p>
+  </div>
+
+  <div class="p-4 sm:p-5">
+    <PdfIntake />
+
+    <form data-options hidden class="mt-5 grid gap-6 md:grid-cols-[1fr_15rem]" autocomplete="off">
+      <div class="grid gap-5 sm:grid-cols-[auto_1fr]">
+        <fieldset>
+          <legend class="label">Position</legend>
+          <div class="relative mt-2 h-44 w-32 rounded-md border border-rule-strong bg-sheet shadow-sm" role="radiogroup">
+            <span class="absolute inset-x-6 top-1/2 h-px bg-rule" aria-hidden="true"></span>
+            <span class="absolute inset-x-6 top-[40%] h-px bg-rule" aria-hidden="true"></span>
+            <span class="absolute inset-x-6 top-[60%] h-px bg-rule" aria-hidden="true"></span>
+            {
+              Object.entries(POSITIONS).map(([value, label]) => (
+                <label class:list={['absolute grid size-7 cursor-pointer place-items-center rounded-full', spots[value]]} title={label}>
+                  <input type="radio" name="position" value={value} checked={value === 'bottom-center'} class="peer sr-only" aria-label={label} />
+                  <span class="size-3 rounded-full border-2 border-rule-strong bg-sheet transition peer-checked:border-signal peer-checked:bg-signal peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-signal hover:border-signal" aria-hidden="true" />
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="space-y-4">
+          <fieldset>
+            <legend class="label">Format</legend>
+            <div class="mt-1.5 grid grid-cols-2 gap-1 rounded-xl border border-rule bg-sheet p-1">
+              {
+                Object.entries(FORMATS).map(([value, format]) => (
+                  <label class={segment}>
+                    <input type="radio" name="format" value={value} checked={value === 'pageOf'} class="sr-only" />
+                    {format.label}
+                  </label>
+                ))
+              }
+            </div>
+          </fieldset>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="label">Ab Seite</span>
+              <input name="fromPage" type="number" min="1" value="1" inputmode="numeric" class={field} />
+            </label>
+            <label class="block">
+              <span class="label">Beginnt mit</span>
+              <input name="startNumber" type="number" min="0" value="1" inputmode="numeric" class={field} />
+            </label>
+          </div>
+          <p class="text-xs text-graphite">Soll das Deckblatt keine Zahl bekommen, zähl ab Seite 2.</p>
+        </div>
+      </div>
+
+      <figure class="max-w-60 md:max-w-none">
+        <figcaption data-preview-caption class="label">Vorschau</figcaption>
+        <div class="relative mt-2 overflow-hidden rounded-md border border-rule bg-sunken shadow-sm">
+          <canvas data-preview-page class="block h-auto w-full"></canvas>
+          <canvas data-preview-mark class="absolute inset-0 h-full w-full"></canvas>
+        </div>
+      </figure>
+    </form>
+  </div>
+
+  <div data-actions hidden class="border-t border-rule bg-sunken/60 px-4 py-4 sm:px-5">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p data-summary class="font-mono text-xs tracking-wide text-ink"></p>
+      <button data-apply type="button" class:list={[button, primary]}>
+        <svg aria-hidden="true" viewBox="0 0 20 20" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M8 4 6 16M14 4l-2 12M4 8h12M3.5 12h12" stroke-linecap="round"></path>
+        </svg>
+        Seitenzahlen einfügen
+      </button>
+    </div>
+    <p data-status role="status" aria-live="polite" class="mt-3 text-sm text-ink empty:hidden"></p>
+  </div>
+
+  <div data-result hidden class="border-t border-rule px-4 py-4 sm:px-5">
+    <div class="flex flex-col gap-4 rounded-xl border border-ok/30 bg-ok/8 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ok text-sheet" aria-hidden="true">
+          <svg viewBox="0 0 20 20" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="m5 10.5 3.2 3L15 6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="font-medium text-ink">Deine PDF ist fertig</p>
+          <p data-result-text class="mt-0.5 text-sm text-graphite"></p>
+        </div>
+      </div>
+      <a data-download class:list={[button, primary]} href="#">Herunterladen</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import '../scripts/page-numbers-tool';
+</script>
