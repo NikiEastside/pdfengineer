@@ -7,8 +7,13 @@ const button =
 const primary = 'bg-signal text-on-signal shadow-sm hover:bg-signal-strong';
 const secondary = 'border border-rule bg-sheet text-ink hover:border-rule-strong';
 const layouts = [
-  { value: 'a4', label: 'A4', note: 'Mit 10 mm Rand. Hoch- oder Querformat passend zu jedem Bild.' },
+  { value: 'a4', label: 'A4', note: 'Mit 10 mm Rand. Hoch- oder Querformat wählst du darunter.' },
   { value: 'image', label: 'Wie das Bild', note: 'Jede Seite genau so groß wie ihr Bild, ohne Rand.' },
+];
+const orientations = [
+  { value: 'auto', label: 'Automatisch' },
+  { value: 'portrait', label: 'Hochformat' },
+  { value: 'landscape', label: 'Querformat' },
 ];
 ---
 
@@ -37,6 +42,21 @@ const layouts = [
           ))
         }
       </div>
+    </fieldset>
+
+    <fieldset data-orientation class="mt-4">
+      <legend class="label">Ausrichtung</legend>
+      <div class="mt-3 inline-flex flex-wrap rounded-xl border border-rule bg-sheet p-1">
+        {
+          orientations.map((orientation) => (
+            <label class="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-graphite transition hover:text-ink has-checked:bg-signal has-checked:text-on-signal has-focus-visible:outline-2 has-focus-visible:outline-signal">
+              <input type="radio" name="orientation" value={orientation.value} checked={orientation.value === 'auto'} class="sr-only" />
+              {orientation.label}
+            </label>
+          ))
+        }
+      </div>
+      <p class="mt-2 text-xs text-graphite">Automatisch heißt: Querbilder auf Querseiten, Hochbilder auf Hochseiten.</p>
     </fieldset>
 
     <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

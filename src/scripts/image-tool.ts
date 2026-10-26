@@ -1,6 +1,6 @@
 import { formatBytes, formatPages } from '../lib/format';
 import { inspectImage, prepareImage, type PreparedImage } from '../lib/image-prepare';
-import type { Layout } from '../lib/images';
+import type { Layout, Orientation } from '../lib/images';
 import type { ImagesReply, ImagesRequest } from '../lib/images.worker';
 import { PdfList, type PdfEntry } from './pdf-list';
 
@@ -18,6 +18,8 @@ const result = find<HTMLElement>('[data-result]');
 const resultText = find<HTMLElement>('[data-result-text]');
 const download = find<HTMLAnchorElement>('[data-download]');
 const layoutInputs = root.querySelectorAll<HTMLInputElement>('input[name="layout"]');
+const orientationBox = find<HTMLElement>('[data-orientation]');
+const orientationInputs = root.querySelectorAll<HTMLInputElement>('input[name="orientation"]');
 
 let busy = false;
 let worker: Worker | undefined;
@@ -59,6 +61,10 @@ function layout(): Layout {
   return ([...layoutInputs].find((input) => input.checked)?.value ?? 'a4') as Layout;
 }
 
+function orientation(): Orientation {
+  return ([...orientationInputs].find((input) => input.checked)?.value ?? 'auto') as Orientation;
+}
+
 function blocker(): string | undefined {
   return files.blocker() ?? (files.entries.length === 0 ? 'Füge mindestens ein Bild hinzu.' : undefined);
 }
@@ -73,7 +79,9 @@ function update() {
   hint.textContent = reason ?? '';
   convertButton.disabled = reason !== undefined || busy;
   clearButton.disabled = busy;
-  for (const input of layoutInputs) input.disabled = busy;
+  for (const input of [...layoutInputs, ...orientationInputs]) input.disabled = busy;
+  // Die Ausrichtung gibt es nur bei A4. Bei "Wie das Bild" folgt jede Seite ihrem Bild.
+  orientationBox.hidden = layout() !== 'a4';
   files.setBusy(busy);
 }
 
@@ -107,7 +115,7 @@ async function convert() {
   status.textContent = 'Erstelle die PDF …';
 
   const current = imagesWorker();
-  const request: ImagesRequest = { images, layout: layout() };
+  const request: ImagesRequest = { images, layout: layout(), orientation: orientation() };
   const reply = await new Promise<ImagesReply>((resolve) => {
     current.onmessage = (event: MessageEvent<ImagesReply>) => resolve(event.data);
     current.onerror = () => {
@@ -136,7 +144,7 @@ async function convert() {
   update();
 }
 
-for (const input of layoutInputs) {
+for (const input of [...layoutInputs, ...orientationInputs]) {
   input.addEventListener('change', () => {
     clearResult();
     update();

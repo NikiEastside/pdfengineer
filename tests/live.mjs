@@ -511,9 +511,14 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     const a4 = await convert('bilder-a4.pdf');
     check(`${engineName} bilder: A4, hoch und quer je nach Bild`, (await pdfPageSizes(a4.target)) === '595x842 595x842 842x595', await pdfPageSizes(a4.target));
     check(`${engineName} bilder: Dateiname`, a4.filename === 'bilder.pdf', a4.filename);
+    await page.locator('#image-tool label:has(input[value=portrait])').click();
+    check(`${engineName} bilder: Hochformat für alle`, (await pdfPageSizes((await convert('bilder-hoch.pdf')).target)) === '595x842 595x842 595x842');
+    await page.locator('#image-tool label:has(input[value=landscape])').click();
+    check(`${engineName} bilder: Querformat für alle`, (await pdfPageSizes((await convert('bilder-quer.pdf')).target)) === '842x595 842x595 842x595');
 
     await page.locator('#image-tool label:has(input[value=image])').click();
     check(`${engineName} bilder: Formatwechsel verwirft Ergebnis`, await page.locator('#image-tool [data-result]').isHidden());
+    check(`${engineName} bilder: Ausrichtung nur bei A4`, await page.locator('#image-tool [data-orientation]').isHidden());
     await context.setOffline(true);
     const before = problems.length;
     let sizes = '';
