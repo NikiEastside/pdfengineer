@@ -29,6 +29,7 @@
     "@okathira/ghostpdl-wasm": "^1.1.0",
     "@tailwindcss/vite": "^4.3.2",
     "astro": "^7.0.6",
+    "fflate": "^0.8.3",
     "pdfjs-dist": "^6.4.299",
     "tailwindcss": "^4.3.2"
   },

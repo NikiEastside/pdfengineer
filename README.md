@@ -50,3 +50,4 @@ Mitgelieferte Programme und ihr Quellcode:
   [ArtifexSoftware/ghostpdl](https://github.com/ArtifexSoftware/ghostpdl)
 - **pdf.js** (Apache-2.0) von [Mozilla](https://github.com/mozilla/pdf.js)
 - **pdf-lib** (MIT) als gepflegter Fork [`@cantoo/pdf-lib`](https://github.com/cantoo-scribe/pdf-lib)
+- **fflate** (MIT) für ZIP-Archive, von [101arrowz](https://github.com/101arrowz/fflate)

@@ -11,6 +11,7 @@
 // CSP blockt es korrekt, WebKit meldet das aber als Fehler, und der Test würde rot, ohne dass
 // die Seite etwas falsch macht.
 import { chromium, webkit } from 'playwright';
+import { unzipSync } from 'fflate';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -64,6 +65,18 @@ async function makeTestImages() {
 }
 await makeTestImages();
 
+// Breite und Höhe aus dem Kopf einer PNG- oder JPG-Datei, ohne Bildbibliothek.
+function imageSize(bytes) {
+  if (bytes[0] === 0x89) return `png ${bytes.readUInt32BE(16)}x${bytes.readUInt32BE(20)}`;
+  let offset = 2;
+  while (offset < bytes.length) {
+    const marker = bytes[offset + 1];
+    if (marker >= 0xc0 && marker <= 0xc2) return `jpg ${bytes.readUInt16BE(offset + 7)}x${bytes.readUInt16BE(offset + 5)}`;
+    offset += 2 + bytes.readUInt16BE(offset + 2);
+  }
+  return 'unbekannt';
+}
+
 async function pdfPageSizes(path) {
   const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
   const sizes = [];
@@ -73,7 +86,7 @@ async function pdfPageSizes(path) {
   }
   return sizes.join(' ');
 }
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/pdf-in-bild/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -527,6 +540,50 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     } catch {}
     problems.splice(before);
     check(`${engineName} bilder: Seiten wie das Bild, Handyfoto gedreht, auch offline`, sizes === '150x300 225x225 225x113', sizes);
+    await context.close();
+  }
+
+
+  // ---------- PDF in Bild ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/pdf-in-bild/', { waitUntil: 'networkidle' });
+    await page.setInputFiles('#raster-tool [data-file-input]', join(FILES, '6-zehn-seiten.pdf'));
+    await page.locator('#raster-tool [data-actions]').waitFor({ state: 'visible', timeout: 30000 });
+    const convert = async () => {
+      await page.locator('#raster-tool [data-convert]').click();
+      await page.locator('#raster-tool [data-result]').waitFor({ state: 'visible', timeout: 120000 });
+    };
+    await convert();
+    const rows = page.locator('#raster-tool [data-images] li');
+    check(`${engineName} pdf-in-bild: zehn Bilder`, (await rows.count()) === 10);
+    const [single] = await Promise.all([page.waitForEvent('download'), rows.nth(2).locator('a[download]').click()]);
+    await single.saveAs(join(DOWNLOADS, `${engineName}-seite.jpg`));
+    const jpg = imageSize(readFileSync(join(DOWNLOADS, `${engineName}-seite.jpg`)));
+    check(`${engineName} pdf-in-bild: JPG mit 150 dpi`, jpg === 'jpg 1240x1754' && single.suggestedFilename() === '6-zehn-seiten-seite-03.jpg', `${jpg} · ${single.suggestedFilename()}`);
+
+    await page.locator('#raster-tool label:has(input[value=png])').click();
+    await page.locator('#raster-tool label:has(input[value="72"])').click();
+    check(`${engineName} pdf-in-bild: Formatwechsel verwirft Ergebnis`, await page.locator('#raster-tool [data-result]').isHidden());
+    await context.setOffline(true);
+    const before = problems.length;
+    let zipped = '';
+    try {
+      await convert();
+      const [zip] = await Promise.all([page.waitForEvent('download'), page.locator('#raster-tool [data-zip]').click()]);
+      await zip.saveAs(join(DOWNLOADS, `${engineName}-bilder.zip`));
+      const entries = unzipSync(new Uint8Array(readFileSync(join(DOWNLOADS, `${engineName}-bilder.zip`))));
+      const names = Object.keys(entries).sort();
+      zipped = `${names.length} Dateien · ${names[0]} · ${imageSize(Buffer.from(entries[names[0]]))} · ${zip.suggestedFilename()}`;
+    } catch {}
+    problems.splice(before);
+    check(
+      `${engineName} pdf-in-bild: ZIP mit PNG in 72 dpi, auch offline`,
+      zipped === '10 Dateien · 6-zehn-seiten-seite-01.png · png 595x842 · 6-zehn-seiten-bilder.zip',
+      zipped,
+    );
     await context.close();
   }
 

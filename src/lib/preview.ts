@@ -84,6 +84,11 @@ export type DocumentMetadata = { values: Metadata; custom: [string, string][]; h
 export type OpenDocument = {
   pageCount: number;
   render: (pageNumber: number, width: number) => Promise<HTMLCanvasElement>;
+  // Zum Speichern als Bild: in fester Auflösung (Punkte pro Zoll), ohne Rücksicht auf den
+  // Bildschirm, und mit weißem Grund. Ohne den würden durchsichtige Stellen im JPG schwarz.
+  renderAtDpi: (pageNumber: number, dpi: number) => Promise<HTMLCanvasElement>;
+  // Größe der Seite in Punkten, so wie sie angezeigt wird, also mit ihrer Drehung.
+  pageSize: (pageNumber: number) => Promise<{ width: number; height: number }>;
   metadata: () => Promise<DocumentMetadata>;
   close: () => Promise<void>;
 };
@@ -104,6 +109,20 @@ export async function openPdf(
       document: {
         pageCount: doc.numPages,
         render: (pageNumber, width) => renderPage(doc, pageNumber, width),
+        renderAtDpi: async (pageNumber, dpi) => {
+          const page = await doc.getPage(pageNumber);
+          const viewport = page.getViewport({ scale: dpi / 72 });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(viewport.width);
+          canvas.height = Math.round(viewport.height);
+          await page.render({ canvas, viewport, background: '#ffffff' }).promise;
+          page.cleanup();
+          return canvas;
+        },
+        pageSize: async (pageNumber) => {
+          const { width, height } = (await doc.getPage(pageNumber)).getViewport({ scale: 1 });
+          return { width, height };
+        },
         metadata: async () => {
           const { info, metadata } = await doc.getMetadata();
           const raw = info as Record<string, unknown>;

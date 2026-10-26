@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import RasterTool from '../components/RasterTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'PDF hinzufügen',
+    text: 'Zieh deine PDF ins Feld oder klick darauf und wähl sie aus.',
+  },
+  {
+    title: 'Format wählen',
+    text: 'JPG für Fotos und Scans, PNG für Text und Grafiken. Dazu die Auflösung: 150 dpi für den Bildschirm, 300 dpi zum Drucken.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Jede Seite wird ein eigenes Bild. Lad sie einzeln herunter oder alle zusammen als ZIP.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Werden meine Dateien hochgeladen?',
+    answer:
+      'Nein. Die Seiten werden direkt in deinem Browser in Bilder umgewandelt. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'JPG oder PNG?',
+    answer:
+      'JPG ist deutlich kleiner und für gescannte Seiten und Fotos die richtige Wahl. PNG ist verlustfrei und bleibt bei Text, Tabellen und Grafiken gestochen scharf, wird dafür größer.',
+  },
+  {
+    question: 'Welche Auflösung brauche ich?',
+    answer:
+      '150 dpi reichen für den Bildschirm, für E-Mails und Präsentationen. 300 dpi brauchst du, wenn die Bilder gedruckt werden sollen. 72 dpi ergibt kleine Vorschaubilder.',
+  },
+  {
+    question: 'Kann ich nur eine Seite als Bild speichern?',
+    answer:
+      'Ja. Umgewandelt werden zwar alle Seiten, aber jede hat ihren eigenen Download-Knopf. Brauchst du nur einen Teil der PDF, kannst du sie vorher mit <a class="text-signal underline underline-offset-2" href="/pdf-teilen/">PDF teilen</a> zerlegen.',
+  },
+  {
+    question: 'Was ist mit passwortgeschützten PDFs?',
+    answer: 'Die Seite fragt dich nach dem Passwort. Es bleibt auf deinem Gerät.',
+  },
+];
+---
+
+<Layout
+  title="PDF in Bild umwandeln – JPG oder PNG, kostenlos und ohne Upload | PDF Engineer"
+  description="PDF-Seiten kostenlos in JPG- oder PNG-Bilder umwandeln, direkt im Browser. Auflösung wählbar, alle Bilder einzeln oder als ZIP. Ohne Upload."
+>
+  <PageHero
+    crumbs={[{ href: '/', text: 'Start' }, { href: '/#werkzeuge', text: 'Werkzeuge' }]}
+    label="PDF in Bild umwandeln"
+    title="PDF in Bild umwandeln"
+    lead="Mach aus jeder Seite einer PDF ein Bild, als JPG oder PNG, in der Auflösung, die du brauchst. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <RasterTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>
