@@ -1,7 +1,9 @@
-// Dateiliste, die Zusammenfügen und Komprimieren teilen: Dateien aufnehmen (Auswahl oder
-// Ziehen, auch neben das Feld), mit pdf.js prüfen und eine Vorschau zeichnen, nach dem
-// Passwort fragen, entfernen und auf Wunsch sortieren. Was ein Werkzeug darüber hinaus
-// anzeigt, etwa Fortschritt und Ergebnis beim Komprimieren, hängt es über `decorate` an.
+// Dateiliste, die Zusammenfügen, Komprimieren und Bilder in PDF teilen: Dateien aufnehmen
+// (Auswahl oder Ziehen, auch neben das Feld), prüfen und eine Vorschau zeichnen, bei PDFs nach
+// dem Passwort fragen, entfernen und auf Wunsch sortieren. Standardmäßig prüft pdf.js jede
+// Datei als PDF. Wer etwas anderes aufnimmt (Bilder), gibt eine eigene Prüfung mit `inspect`.
+// Was ein Werkzeug darüber hinaus anzeigt, etwa das Ergebnis beim Komprimieren, hängt es über
+// `decorate` an.
 import { formatBytes, formatPages } from '../lib/format';
 import { inspectPdf } from '../lib/preview';
 
@@ -11,7 +13,11 @@ export type PdfEntry = {
   bytes?: Uint8Array;
   state: 'loading' | 'ready' | 'password' | 'invalid';
   pageCount?: number;
-  thumbnail?: HTMLCanvasElement;
+  thumbnail?: HTMLElement;
+  // Statt der Seitenzahl in der Zeile unter dem Namen, etwa "1920 × 1080 px" bei Bildern.
+  detail?: string;
+  // Warum eine Datei nicht geöffnet werden konnte, falls es Genaueres gibt als "keine PDF".
+  problem?: string;
   password?: string;
   wrongPassword?: boolean;
   // Nur geänderte Einträge werden neu gezeichnet. Würde die Liste bei jeder Änderung komplett
@@ -29,6 +35,8 @@ type Options = {
   onChange: (orderChanged: boolean) => void;
   onFirstFile?: () => void;
   decorate?: (entry: PdfEntry, body: HTMLElement) => void;
+  // Eigene Prüfung statt pdf.js. Setzt state, thumbnail und detail oder problem am Eintrag.
+  inspect?: (entry: PdfEntry) => Promise<void>;
 };
 
 const THUMBNAIL_WIDTH = 48;
@@ -147,6 +155,11 @@ export class PdfList {
   }
 
   private async inspect(entry: PdfEntry, password?: string) {
+    if (this.options.inspect) {
+      await this.options.inspect(entry);
+      if (this.entries.includes(entry)) this.touch(entry);
+      return;
+    }
     try {
       entry.bytes ??= new Uint8Array(await entry.file.arrayBuffer());
     } catch {
@@ -239,10 +252,10 @@ export class PdfList {
     if (entry.state === 'loading') {
       body.append(element('p', `${meta} text-graphite`, `${size} · wird gelesen …`));
     } else if (entry.state === 'ready') {
-      body.append(element('p', `${meta} text-graphite`, `${formatPages(entry.pageCount!)} · ${size}`));
+      body.append(element('p', `${meta} text-graphite`, `${entry.detail ?? formatPages(entry.pageCount!)} · ${size}`));
       this.options.decorate?.(entry, body);
     } else if (entry.state === 'invalid') {
-      body.append(element('p', `${meta} text-danger`, 'Kann nicht geöffnet werden. Keine PDF oder beschädigt?'));
+      body.append(element('p', `${meta} text-danger`, entry.problem ?? 'Kann nicht geöffnet werden. Keine PDF oder beschädigt?'));
     } else {
       body.append(element('p', `${meta} text-danger`, entry.wrongPassword ? 'Falsches Passwort' : 'Passwortgeschützt'));
       body.append(this.passwordForm(entry));

@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import TrustBadges from '../components/TrustBadges.astro';
+import ImageTool from '../components/ImageTool.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Steps from '../components/Steps.astro';
+import Faq from '../components/Faq.astro';
+
+const steps = [
+  {
+    title: 'Bilder hinzufügen',
+    text: 'Zieh deine Fotos oder Scans ins Feld oder wähl sie aus. JPG, PNG, WebP, GIF und mehr.',
+  },
+  {
+    title: 'Sortieren',
+    text: 'Bring die Bilder in die Reihenfolge der Seiten und wähl, ob A4 oder Bildgröße.',
+  },
+  {
+    title: 'Herunterladen',
+    text: 'Ein Klick auf „In PDF umwandeln“, und alle Bilder stehen in einer PDF, ein Bild pro Seite.',
+  },
+];
+
+const faq = [
+  {
+    question: 'Welche Bildformate gehen?',
+    answer:
+      'Alles, was dein Browser anzeigen kann: JPG, PNG, WebP, GIF, BMP und AVIF. HEIC-Fotos vom iPhone öffnet nur Safari. Am iPhone selbst geht es also direkt, in anderen Browsern speicherst du sie vorher als JPG.',
+  },
+  {
+    question: 'Werden meine Bilder hochgeladen?',
+    answer:
+      'Nein. Die Bilder werden direkt in deinem Browser in eine PDF verwandelt. Die Seite kann gar keine Verbindung zu fremden Servern aufbauen, das blockiert dein Browser. <a class="text-signal underline underline-offset-2" href="/sicherheit/">Hier kannst du das selbst testen.</a>',
+  },
+  {
+    question: 'Verlieren die Bilder an Qualität?',
+    answer:
+      'JPG und PNG kommen unverändert in die PDF. Andere Formate und Handyfotos, die gedreht werden müssen, speichert dein Browser vorher als JPG in hoher Qualität. Ist die PDF danach zu groß, kannst du sie mit <a class="text-signal underline underline-offset-2" href="/pdf-komprimieren/">PDF komprimieren</a> verkleinern.',
+  },
+  {
+    question: 'Warum steht mein Handyfoto richtig herum?',
+    answer:
+      'Handys speichern Hochformatfotos oft quer und vermerken nur, dass sie gedreht werden sollen. PDFs kennen diesen Vermerk nicht. Deshalb dreht die Seite solche Fotos vorher, damit sie in der PDF so stehen wie auf deinem Handy.',
+  },
+  {
+    question: 'A4 oder „Wie das Bild“?',
+    answer:
+      'A4 ist gut zum Drucken, für Formulare und Bewerbungen: jede Seite gleich groß, mit schmalem Rand. „Wie das Bild“ macht jede Seite genau so groß wie ihr Bild, ohne weißen Rand. Das sieht am Bildschirm am besten aus.',
+  },
+];
+---
+
+<Layout
+  title="Bilder in PDF umwandeln – JPG, PNG und mehr, kostenlos und ohne Upload | PDF Engineer"
+  description="JPG, PNG, WebP und andere Bilder kostenlos in eine PDF umwandeln, direkt im Browser. Mehrere Fotos in eine Datei, Reihenfolge frei wählbar. Ohne Upload."
+>
+  <PageHero
+    label="Werkzeug 06 / Bilder in PDF"
+    title="Bilder in PDF umwandeln"
+    lead="Mach aus Fotos und Scans eine PDF, ein Bild pro Seite, in der Reihenfolge, die du willst. JPG, PNG, WebP und mehr. Direkt im Browser und ohne Upload."
+  >
+    <TrustBadges />
+  </PageHero>
+
+  <section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+    <ImageTool />
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Ablauf" title="So funktioniert's" />
+    <Steps steps={steps} />
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pt-20 sm:px-6">
+    <SectionHeading label="Fragen" title="Häufige Fragen" />
+    <Faq items={faq} />
+  </section>
+</Layout>

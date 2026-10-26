@@ -11,7 +11,7 @@
 // CSP blockt es korrekt, WebKit meldet das aber als Fehler, und der Test würde rot, ohne dass
 // die Seite etwas falsch macht.
 import { chromium, webkit } from 'playwright';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,7 +26,54 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 if (!existsSync(join(FILES, '7-mit-metadaten.pdf'))) execFileSync('node', ['scripts/make-test-pdfs.mjs'], { stdio: 'inherit' });
 
 const pdfjs = await import('../node_modules/pdfjs-dist/legacy/build/pdf.mjs');
-const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/sicherheit/', '/impressum/', '/datenschutz/'];
+
+// Testbilder entstehen im Browser, denn nur der kann ohne Zusatzbibliothek JPG und WebP
+// schreiben. Das JPG bekommt einen EXIF-Vermerk "um 90° drehen" (Ausrichtung 6), wie ihn
+// Handys bei Hochformatfotos setzen: In der Datei liegt es quer, gemeint ist hochkant.
+async function makeTestImages() {
+  if (existsSync(join(FILES, 'bild-handyfoto.jpg'))) return;
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const encode = (width, height, type, transparent) =>
+    page.evaluate(
+      async ([width, height, type, transparent]) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#c33';
+        context.fillRect(0, 0, width / 2, height);
+        context.fillStyle = '#36c';
+        context.fillRect(width / 2, 0, width / 2, height);
+        if (transparent) context.clearRect(0, 0, width, height / 2);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, type, 0.9));
+        return [...new Uint8Array(await blob.arrayBuffer())];
+      },
+      [width, height, type, transparent],
+    );
+  const jpeg = Buffer.from(await encode(400, 200, 'image/jpeg', false));
+  const exif = Buffer.from([
+    0xff, 0xe1, 0x00, 0x22, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08,
+    0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ]);
+  writeFileSync(join(FILES, 'bild-handyfoto.jpg'), Buffer.concat([jpeg.subarray(0, 2), exif, jpeg.subarray(2)]));
+  writeFileSync(join(FILES, 'bild-transparent.png'), Buffer.from(await encode(300, 300, 'image/png', true)));
+  writeFileSync(join(FILES, 'bild.webp'), Buffer.from(await encode(300, 150, 'image/webp', false)));
+  writeFileSync(join(FILES, 'kein-bild.png'), 'Das ist kein Bild.');
+  await browser.close();
+}
+await makeTestImages();
+
+async function pdfPageSizes(path) {
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise;
+  const sizes = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const { width, height } = (await doc.getPage(i)).getViewport({ scale: 1 });
+    sizes.push(`${Math.round(width)}x${Math.round(height)}`);
+  }
+  return sizes.join(' ');
+}
+const PAGES = ['/', '/pdf-zusammenfuegen/', '/pdf-komprimieren/', '/pdf-teilen/', '/pdf-seiten-sortieren/', '/pdf-metadaten-aendern/', '/bilder-in-pdf/', '/sicherheit/', '/impressum/', '/datenschutz/'];
 const MISSING = '/gibt-es-nicht/';
 
 let failed = 0;
@@ -432,6 +479,49 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     } catch {}
     problems.splice(before);
     check(`${engineName} metadaten: Passwort-PDF behält Angaben, auch offline`, locked?.Title === 'Rot' && locked?.Producer?.startsWith('pdf-lib'), JSON.stringify({ Title: locked?.Title, Producer: locked?.Producer }));
+    await context.close();
+  }
+
+
+  // ---------- Bilder in PDF ----------
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    watch(page, problems);
+    await page.goto(BASE + '/bilder-in-pdf/', { waitUntil: 'networkidle' });
+    await page.setInputFiles(
+      '#image-tool [data-file-input]',
+      ['bild-handyfoto.jpg', 'bild-transparent.png', 'bild.webp', 'kein-bild.png'].map((f) => join(FILES, f)),
+    );
+    await waitRead(page);
+    const rows = page.locator('#image-tool [data-list] > li');
+    check(`${engineName} bilder: Handyfoto als Hochformat erkannt`, (await rows.nth(0).textContent()).includes('200 × 400 px'), (await rows.nth(0).textContent()).replace(/\s+/g, ' '));
+    check(`${engineName} bilder: Nicht-Bild gemeldet, Knopf gesperrt`, (await rows.nth(3).textContent()).includes('Kann nicht geöffnet werden') && (await page.locator('#image-tool [data-convert]').isDisabled()));
+    await rows.nth(3).locator('[data-action=remove]').click();
+
+    const convert = async (name) => {
+      await page.locator('#image-tool [data-convert]').click();
+      await page.locator('#image-tool [data-result]').waitFor({ state: 'visible', timeout: 60000 });
+      const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#image-tool [data-download]').click()]);
+      const target = join(DOWNLOADS, `${engineName}-${name}`);
+      await download.saveAs(target);
+      return { target, filename: download.suggestedFilename() };
+    };
+
+    const a4 = await convert('bilder-a4.pdf');
+    check(`${engineName} bilder: A4, hoch und quer je nach Bild`, (await pdfPageSizes(a4.target)) === '595x842 595x842 842x595', await pdfPageSizes(a4.target));
+    check(`${engineName} bilder: Dateiname`, a4.filename === 'bilder.pdf', a4.filename);
+
+    await page.locator('#image-tool label:has(input[value=image])').click();
+    check(`${engineName} bilder: Formatwechsel verwirft Ergebnis`, await page.locator('#image-tool [data-result]').isHidden());
+    await context.setOffline(true);
+    const before = problems.length;
+    let sizes = '';
+    try {
+      sizes = await pdfPageSizes((await convert('bilder-bildgroesse.pdf')).target);
+    } catch {}
+    problems.splice(before);
+    check(`${engineName} bilder: Seiten wie das Bild, Handyfoto gedreht, auch offline`, sizes === '150x300 225x225 225x113', sizes);
     await context.close();
   }
 

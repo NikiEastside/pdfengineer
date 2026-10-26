@@ -40,13 +40,13 @@ const specs = [
 ---
 
 <Layout
-  title="PDF Engineer – PDFs zusammenfügen, teilen, sortieren und komprimieren ohne Upload"
-  description="PDFs kostenlos zusammenfügen, teilen, sortieren, komprimieren und Metadaten ändern, direkt im Browser. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
+  title="PDF Engineer – PDF-Werkzeuge ohne Upload"
+  description="Kostenlose PDF-Werkzeuge direkt im Browser: zusammenfügen, teilen, sortieren, komprimieren, Bilder umwandeln und Metadaten ändern. Deine Dateien werden nicht hochgeladen, und du brauchst keine Anmeldung."
 >
   <PageHero
     size="large"
     title={'PDFs bearbeiten,<br class="hidden sm:block" /> <span class="text-signal">ohne sie hochzuladen.</span>'}
-    lead="Zusammenfügen, teilen, sortieren, komprimieren und Metadaten bereinigen geht hier direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
+    lead="Die PDF-Werkzeuge, die man im Alltag braucht, direkt in deinem Browser. Deine Dateien bleiben auf deinem Gerät, wir bekommen sie nie zu sehen."
   >
     <a href="/sicherheit/" class="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-signal hover:underline">
       Selbst nachprüfen, dass nichts hochgeladen wird <span aria-hidden="true">→</span>
@@ -165,6 +165,29 @@ const specs = [
         <h3 class="mt-6 text-xl font-semibold text-ink">PDF-Metadaten ändern</h3>
         <p class="mt-2 text-sm leading-relaxed text-graphite">
           Sieh nach, was deine PDF über dich verrät, und ändere oder entferne Autor, Titel und Programm.
+        </p>
+        <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
+          Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </span>
+      </a>
+
+      <a
+        href="/bilder-in-pdf/"
+        class="group crop-marks flex flex-col rounded-2xl border border-rule bg-sheet p-6 transition hover:border-signal/50 hover:shadow-[0_12px_40px_-16px_rgb(29_91_214/0.35)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+      >
+        <div class="flex items-start justify-between">
+          <span class="grid size-11 place-items-center rounded-xl bg-signal/10 text-signal">
+            <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="5" width="12" height="10" rx="1.5" stroke-linejoin="round"></rect>
+              <path d="m3 13 3.5-3.5 3 3 2-2L15 14" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M17 9h2.5L21 10.5V20a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <span class="label">Werkzeug 06</span>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-ink">Bilder in PDF umwandeln</h3>
+        <p class="mt-2 text-sm leading-relaxed text-graphite">
+          Mach aus Fotos und Scans eine PDF. JPG, PNG, WebP und mehr, ein Bild pro Seite.
         </p>
         <span class="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-signal">
           Öffnen <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
